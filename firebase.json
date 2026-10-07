@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "public": "Tusul",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}
