@@ -383,7 +383,17 @@ async function loginUserAsync(email, password) {
       const list = users || mergeUsersLocalAndCloud();
       const user = list.find((u) => String(u.email).toLowerCase() === cleanEmail);
       if (!user) return { ok: false, error: "Ийм имэйл хаягтай хэрэглэгч олдсонгүй." };
-      if (user.password !== String(password)) return { ok: false, error: "Нууц үг буруу байна." };
+      if (!checkPassword(password, user.password)) return { ok: false, error: "Нууц үг буруу байна." };
+      // Хуучин plaintext бичлэгийг hash руу шилжүүлнэ
+      if (String(user.password).indexOf("sha256:") !== 0) {
+        try {
+          user.password = hashPassword(password);
+          const localAll = readJSON(CONFIG.keys.users, []);
+          const li = localAll.findIndex((u) => u && u.id === user.id);
+          if (li > -1) { localAll[li].password = user.password; saveUsersLocalOnly(localAll); }
+          cloudUpsertUser(user);
+        } catch (e) {}
+      }
       // Firebase Auth session (боломжтой бол) — төхөөрөмж дээр persistence
       try {
         if (CLOUD.auth) {
@@ -659,7 +669,8 @@ const CONFIG = {
     profile: "tz_profile"
   },
   adminEmail: "admin@turgunhazalt.mn",
-  adminPassword: "admin123"
+  // Админ нууц үг кодонд plaintext-ээр БАЙХГҮЙ — зөвхөн SHA-256 hash хадгалагдана.
+  adminPassHash: "sha256:04fed8cbbf28b0bb54775c32a662f7e865a117a984dcd17b848741365c30b6c0"
 };
 
 /* Захиалгын төлөвийн тодорхойлолт */
@@ -863,6 +874,92 @@ function showToast(message, type = "success", title = "") {
   setTimeout(remove, 3400);
 }
 
+/* ============================ 5.5 НУУЦ ҮГИЙН ХАМГААЛАЛТ (SHA-256) ============================
+   Нууц үгийг код / localStorage / Cloud-д plaintext-ээр хадгалдаг хуучин аргыг халсан.
+   - hashPassword(pw) → "sha256:<hex>" (кодонд бодит нууц үг хэзээ ч бичигдэхгүй)
+   - checkPassword(input, stored): "sha256:" угтвартай бичлэгийг hash-ээр шалгана;
+     хуучин plaintext бичлэг таарвал шалгалт амжилттай болж, дуудаж буй тал hash руу шилжүүлнэ.
+   - Админ бүртгэлийн нууц үг зөвхөн hash хэлбэрээр хадгалагдана. */
+var sha256Hex = (function () {
+  var K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+  function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }
+  function utf8Bytes(str) {
+    var bytes = [];
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c < 128) bytes.push(c);
+      else if (c < 2048) bytes.push(192 | (c >> 6), 128 | (c & 63));
+      else if (c >= 55296 && c < 57344 && i + 1 < str.length) {
+        var lo = str.charCodeAt(++i);
+        var cp = 65536 + ((c - 55296) << 10) + (lo - 56320);
+        bytes.push(240 | (cp >> 18), 128 | ((cp >> 12) & 63), 128 | ((cp >> 6) & 63), 128 | (cp & 63));
+      } else bytes.push(224 | (c >> 12), 128 | ((c >> 6) & 63), 128 | (c & 63));
+    }
+    return bytes;
+  }
+  return function sha256Hex(str) {
+    var bytes = utf8Bytes(String(str));
+    var bitLen = bytes.length * 8;
+    bytes.push(128);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    var hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;
+    bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255,
+               (lo >>> 24) & 255, (lo >>> 16) & 255, (lo >>> 8) & 255, lo & 255);
+    var h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a,
+        h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
+    var w = new Array(64);
+    for (var b = 0; b < bytes.length; b += 64) {
+      for (var t = 0; t < 16; t++) w[t] = ((bytes[b + t * 4] << 24) | (bytes[b + t * 4 + 1] << 16) | (bytes[b + t * 4 + 2] << 8) | bytes[b + t * 4 + 3]) | 0;
+      for (t = 16; t < 64; t++) {
+        var s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
+        var s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
+        w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
+      }
+      var a = h0, bb = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+      for (t = 0; t < 64; t++) {
+        var S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+        var ch = (e & f) ^ ((~e) & g);
+        var t1 = (h + S1 + ch + K[t] + w[t]) | 0;
+        var S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+        var mj = (a & bb) ^ (a & c) ^ (bb & c);
+        var t2 = (S0 + mj) | 0;
+        h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = bb; bb = a; a = (t1 + t2) | 0;
+      }
+      h0 = (h0 + a) | 0; h1 = (h1 + bb) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0;
+      h4 = (h4 + e) | 0; h5 = (h5 + f) | 0; h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
+    }
+    function hex(x) { return ('00000000' + (x >>> 0).toString(16)).slice(-8); }
+    return hex(h0) + hex(h1) + hex(h2) + hex(h3) + hex(h4) + hex(h5) + hex(h6) + hex(h7);
+  };
+})();
+
+function hashPassword(pw) {
+  return "sha256:" + sha256Hex(String(pw == null ? "" : pw));
+}
+
+function checkPassword(input, stored) {
+  var s = String(stored == null ? "" : stored);
+  var inp = String(input == null ? "" : input);
+  if (s.indexOf("sha256:") === 0) {
+    var a = s.slice(7);
+    var b = sha256Hex(inp);
+    if (a.length !== 64 || b.length !== 64 || a.length !== b.length) return false;
+    var diff = 0;
+    for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    return diff === 0;
+  }
+  return s !== "" && s === inp;
+}
+
 /* ============================ 6. ХЭРЭГЛЭГЧИЙН АККАУНТ (AUTH) ============================ */
 function getUsers() {
   // Cloud кэш бэлэн бол локал+cloud нэгтгэлийг буцаана (өөр төхөөрөмжийн бүртгэл харагдана)
@@ -883,20 +980,32 @@ function saveUsers(users) {
   return ok;
 }
 
-/* Анхны админ аккаунтыг автоматаар үүсгэнэ (local + cloud) */
+/* Анхны админ аккаунтыг автоматаар үүсгэнэ/шийдвэрлэнэ (нууц үг зөвхөн hash-ээр).
+   Хуучин сул/plaintext нууц үг олдвол шинэ хүчтэй нууц үгийн hash-ээр солино (credential rotation).
+   Админ өөрөө солисон hash-тай нууц үгийг хүндэтгэж, дарж бичихгүй. */
 function seedAdmin() {
   const users = getUsers();
-  if (!users.some((u) => u.email === CONFIG.adminEmail)) {
-    users.push({
-      id: "u_admin",
-      name: "Систем Админ",
-      email: CONFIG.adminEmail,
-      phone: "77001122",
-      address: "Улаанбаатар хот, Сүхбаатар дүүрэг",
-      password: CONFIG.adminPassword,
-      role: "admin",
-      createdAt: new Date().toISOString()
-    });
+  const idx = users.findIndex((u) => u && String(u.email).toLowerCase() === CONFIG.adminEmail);
+  const fresh = {
+    id: "u_admin",
+    name: "Систем Админ",
+    email: CONFIG.adminEmail,
+    phone: "77001122",
+    address: "Улаанбаатар хот, Сүхбаатар дүүрэг",
+    password: CONFIG.adminPassHash,
+    role: "admin",
+    createdAt: new Date().toISOString()
+  };
+  if (idx === -1) {
+    users.push(fresh);
+    saveUsers(users);
+  } else if (typeof users[idx].password === "string" && users[idx].password.indexOf("sha256:") === 0 && users[idx].password !== CONFIG.adminPassHash) {
+    // Админ өөрөө солисон нууц үг — хэвээр үлдээж Cloud руу синк хийнэ
+    if (isCloudReady()) {
+      try { cloudUpsertUser(users[idx]); } catch (e) {}
+    }
+  } else if (users[idx].password !== CONFIG.adminPassHash || users[idx].role !== "admin") {
+    users[idx] = { ...users[idx], ...fresh, createdAt: users[idx].createdAt || fresh.createdAt };
     saveUsers(users);
   } else if (isCloudReady()) {
     // Админ cloud-д байхгүй бол хуулна (өөр төхөөрөмжөөс нэвтрэхэд хэрэгтэй)
@@ -919,7 +1028,7 @@ function registerUser({ name, email, phone, password, address = "" }) {
     email: cleanEmail,
     phone: String(phone).trim(),
     address: String(address).trim(),
-    password: String(password),
+    password: hashPassword(password),
     role: "customer",
     createdAt: new Date().toISOString()
   };
@@ -930,9 +1039,15 @@ function registerUser({ name, email, phone, password, address = "" }) {
 
 function loginUser(email, password) {
   const cleanEmail = String(email).trim().toLowerCase();
-  const user = getUsers().find((u) => u.email === cleanEmail);
+  const users = getUsers();
+  const user = users.find((u) => u.email === cleanEmail);
   if (!user) return { ok: false, error: "Ийм имэйл хаягтай хэрэглэгч олдсонгүй." };
-  if (user.password !== String(password)) return { ok: false, error: "Нууц үг буруу байна." };
+  if (!checkPassword(password, user.password)) return { ok: false, error: "Нууц үг буруу байна." };
+  if (String(user.password).indexOf("sha256:") !== 0) {
+    // Хуучин plaintext бичлэгийг hash руу шилжүүлнэ
+    user.password = hashPassword(password);
+    saveUsers(users);
+  }
   writeJSON(CONFIG.keys.session, { userId: user.id, email: user.email, at: new Date().toISOString() });
   return { ok: true, user };
 }
@@ -959,7 +1074,7 @@ function updateCurrentUser(patch) {
   const users = getUsers();
   const idx = users.findIndex((u) => u.id === user.id);
   if (idx === -1) return { ok: false, error: "Хэрэглэгч олдсонгүй." };
-  users[idx] = { ...users[idx], ...patch, password: patch.password || users[idx].password };
+  users[idx] = { ...users[idx], ...patch, password: patch.password ? hashPassword(patch.password) : users[idx].password };
   saveUsers(users);
   cloudUpsertUser(users[idx]);
   return { ok: true, user: users[idx] };
@@ -2306,7 +2421,7 @@ function initProfilePage() {
     const oldPw = document.getElementById("pw-old").value;
     const newPw = document.getElementById("pw-new").value;
     const current = getCurrentUser();
-    if (!current || current.password !== oldPw) return showToast("Хуучин нууц үг буруу байна.", "error", "Алдаа");
+    if (!current || !checkPassword(oldPw, current.password)) return showToast("Хуучин нууц үг буруу байна.", "error", "Алдаа");
     if (newPw.length < 6) return showToast("Шинэ нууц үг 6+ тэмдэгт байх ёстой.", "error", "Алдаа");
     updateCurrentUser({ password: newPw });
     pwForm.reset();
@@ -2474,7 +2589,24 @@ function lookupOrders() {
 }
 
 /* ============================ 17. ЕРӨНХИЙ INIT ============================ */
+
+/* Админ хамгаалалт (script.js): админаар нэвтрээгүй хэрэглэгч admin/ хавтас эсвэл
+   захиалгын удирдлагын хуудас руу шууд линкээр орохыг оролдвол login.html руу буцаана.
+   (Админ хуудсууд дээрх үндсэн шалгалт admin/admin.js-ийн login gate-д байна.) */
+function requireAdmin() {
+  try {
+    const p = String((window.location && window.location.pathname) || "");
+    const isAdminPage = p.indexOf("/admin/") !== -1 || /(^|\/)admin\/(index|orders)\.html$/.test(p);
+    if (isAdminPage && !isAdmin()) {
+      window.location.replace("../login.html");
+      return false;
+    }
+  } catch (e) { /* хамгаалалтыг зөөлөн алгасна */ }
+  return true;
+}
+
 function initCommon() {
+  if (!requireAdmin()) return;
   seedAdmin();
   ensureCartUI();
   ensureToastHost();
