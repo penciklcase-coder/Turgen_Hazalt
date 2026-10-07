@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Бидний тухай - Түргэн Хазалт</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="about" class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+      <a href="index.html" class="flex items-center gap-2 text-xl sm:text-2xl font-black text-red-600 flex-shrink-0">
+        <i class="fa-solid fa-burger text-2xl sm:text-3xl"></i>
+        <span>ТҮРГЭН <span class="text-amber-500">ХАЗАЛТ</span></span>
+      </a>
+      <nav class="hidden md:flex items-center space-x-8 font-semibold text-gray-600">
+        <a href="index.html" class="hover:text-red-600 transition">Нүүр</a>
+        <a href="menu.html" class="hover:text-red-600 transition">Цэс</a>
+        <a href="promos.html" class="hover:text-red-600 transition">Урамшуулал</a>
+        <a href="about.html" class="text-red-600 font-bold">Бидний тухай</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <div id="header-actions"></div>
+        <div id="mobile-nav-slot"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-r from-red-600 to-amber-500 text-white py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto text-center">
+      <span class="bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">БҮТЭЭН БАЙГУУЛАЛТ &amp; ТҮҮХ</span>
+      <h1 class="text-4xl sm:text-5xl font-black mt-4">Халуухан, Амттай, Түргэн Шуурхай!</h1>
+      <p class="mt-4 text-red-100 text-lg max-w-2xl mx-auto">
+        Бид таны дуртай амтыг цаг алдалгүй, хамгийн шинэлэг байдлаар халуунаар нь хүргэхийг зорьдог.
+      </p>
+    </div>
+  </section>
+
+  <!-- Story & Mission Section -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-grow space-y-16 w-full">
+
+    <!-- Intro / Grid -->
+    <div class="grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-4">Бид хэн бэ?</h2>
+        <p class="text-gray-600 leading-relaxed mb-4">
+          <strong>Түргэн Хазалт</strong> нь 2026 онд үүсгэн байгуулагдсан бөгөөд хотын иргэдэд чанартай, амттай түргэн хоолыг 30 минутын дотор найдвартай хүргэж өгөх зорилготой онлайн хоол хүргэлтийн платформ юм.
+        </p>
+        <p class="text-gray-600 leading-relaxed">
+          Бид хоолны орц бүрийг өдөр бүр шинээр нь сонгон шалгаруулж, мэргэжлийн шеф тогооч нарын жороор бэлтгэдэг. Таны захиалсан хоол бүр халуун хэвээрээ таны гар дээр очих болно.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+            <p class="text-2xl font-black text-red-600">100</p>
+            <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Төрлийн хоол</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+            <p class="text-2xl font-black text-amber-500">8</p>
+            <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Хэмнэлттэй багц</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+            <p class="text-2xl font-black text-gray-900">30</p>
+            <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Минут хүргэлт</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+            <p class="text-2xl font-black text-gray-900">24/7</p>
+            <p class="text-[11px] font-bold uppercase tracking-wide text-gray-500">Онлайн захиалга</p>
+          </div>
+        </div>
+      </div>
+      <div class="relative">
+        <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80" alt="Гал тогоо" class="rounded-2xl shadow-xl w-full h-80 object-cover">
+        <div class="absolute -bottom-6 -left-6 bg-amber-400 text-red-950 p-4 rounded-xl shadow-lg hidden sm:block">
+          <p class="text-2xl font-black">30 Минут</p>
+          <p class="text-xs font-bold uppercase tracking-wider">Шуурхай Хүргэлт</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features / Why Choose Us -->
+    <div>
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-3xl font-extrabold text-gray-900">Яагаад Түргэн Хазалт гэж?</h2>
+        <p class="text-gray-500 mt-2">Бид танд зөвхөн хоол биш, амтат мэдрэмж болон цаг хугацааг бэлэглэнэ.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="feature-card bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center">
+          <div class="feature-icon w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl"><i class="fa-solid fa-leaf"></i></div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">100% Шинэ Орц</h3>
+          <p class="text-gray-600 text-sm">Өдөр бүр шинээр бэлтгэсэн мах, хүнсний ногоо болон гараар хийсэн тусгай сүмсүүд.</p>
+        </div>
+        <div class="feature-card bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center">
+          <div class="feature-icon w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl"><i class="fa-solid fa-motorcycle"></i></div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Түргэн Хүргэлт</h3>
+          <p class="text-gray-600 text-sm">Тусгай дулаан хадгалагч цүнхээр хоолыг хөрөхөөс нь өмнө халуунаар нь хүргэнэ.</p>
+        </div>
+        <div class="feature-card bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center sm:col-span-2 lg:col-span-1">
+          <div class="feature-icon w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl"><i class="fa-solid fa-smile"></i></div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Сэтгэл Ханамж</h3>
+          <p class="text-gray-600 text-sm">Хэрэглэгчдийн ая тух, сэтгэл ханамжийг бид үргэлж хамгийн эхэнд тавьдаг.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gallery (Семинар 8: CSS Grid Gallery) -->
+    <div>
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <h2 class="text-3xl font-extrabold text-gray-900">Бидний гал тогооны агшин</h2>
+        <p class="text-gray-500 mt-2">Шинэхэн орц, мэргэжлийн тогооч, амттай хоол.</p>
+      </div>
+      <div class="gallery-grid">
+        <div class="gallery-grid-item featured">
+          <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80" alt="Бургер">
+          <div class="gallery-overlay"><h4 class="text-xl">Сонгодог Чизбургер</h4><p>Хамгийн их борлуулалттай</p></div>
+        </div>
+        <div class="gallery-grid-item">
+          <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=500&q=80" alt="Пицца">
+          <div class="gallery-overlay"><h4>Пицца</h4><p>Шинэхэн жигнэсэн</p></div>
+        </div>
+        <div class="gallery-grid-item">
+          <img src="https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=500&q=80" alt="Тахиа">
+          <div class="gallery-overlay"><h4>Шаржигнуур тахиа</h4><p>Халуун ногоотой</p></div>
+        </div>
+        <div class="gallery-grid-item">
+          <img src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=500&q=80" alt="Рамен">
+          <div class="gallery-overlay"><h4>Рамен шөл</h4><p>Япон жор</p></div>
+        </div>
+        <div class="gallery-grid-item">
+          <img src="https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=500&q=80" alt="Тирамису">
+          <div class="gallery-overlay"><h4>Тирамису</h4><p>Итали амттан</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Info Section -->
+    <div class="bg-gray-900 text-white rounded-3xl p-8 sm:p-12 shadow-2xl">
+      <div class="grid md:grid-cols-3 gap-8 text-center md:text-left">
+        <div class="flex flex-col items-center md:items-start">
+          <i class="fa-solid fa-location-dot text-amber-400 text-3xl mb-3"></i>
+          <h4 class="font-bold text-lg">Байршил</h4>
+          <p class="text-gray-400 text-sm mt-1">Улаанбаатар хот, Сүхбаатар дүүрэг, 1-р хороо</p>
+        </div>
+        <div class="flex flex-col items-center md:items-start">
+          <i class="fa-solid fa-phone text-amber-400 text-3xl mb-3"></i>
+          <h4 class="font-bold text-lg">Холбоо барих</h4>
+          <p class="text-gray-400 text-sm mt-1">+976 7711-2233</p>
+          <p class="text-gray-400 text-sm">info@turgunhazalt.mn</p>
+        </div>
+        <div class="flex flex-col items-center md:items-start">
+          <i class="fa-solid fa-clock text-amber-400 text-3xl mb-3"></i>
+          <h4 class="font-bold text-lg">Цагийн хуваарь</h4>
+          <p class="text-gray-400 text-sm mt-1">Даваа - Ням: 10:00 - 23:00</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 grid sm:grid-cols-3 gap-8 text-center sm:text-left">
+      <div>
+        <p class="font-black text-white text-lg mb-2 flex items-center gap-2 justify-center sm:justify-start">
+          <i class="fa-solid fa-burger text-red-500"></i> ТҮРГЭН <span class="text-amber-500">ХАЗАЛТ</span>
+        </p>
+        <p class="text-sm">Амттай хоолыг хамгийн хурдан шуурхай хүргэх онлайн платформ.</p>
+      </div>
+      <div>
+        <p class="font-bold text-white mb-3">Холбоос</p>
+        <div class="flex flex-col gap-1.5 text-sm">
+          <a href="index.html" class="hover:text-red-500 transition">Нүүр хуудас</a>
+          <a href="menu.html" class="hover:text-red-500 transition">Хоолны цэс</a>
+          <a href="promos.html" class="hover:text-red-500 transition">Урамшуулал</a>
+          <a href="admin/index.html" class="hover:text-red-500 transition">Админ панель</a>
+        </div>
+      </div>
+      <div>
+        <p class="font-bold text-white mb-3">Холбоо барих</p>
+        <p class="text-sm"><i class="fa-solid fa-phone mr-1 text-amber-500"></i> +976 7711-2233</p>
+        <p class="text-sm"><i class="fa-solid fa-envelope mr-1 text-amber-500"></i> info@turgunhazalt.mn</p>
+        <p class="text-sm mt-2">© 2026 Онлайн хоол захиалгын систем.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Firebase Realtime Database (CDN, Compat v10) — онлайн захиалга синк -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

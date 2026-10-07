@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Захиалга хянах — Түргэн Хазалт Админ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- ================= НЭВТРЭХ ХААЛТ ================= -->
+  <div id="admin-gate" class="gate-wrap hidden">
+    <div class="gate-card">
+      <div class="gate-logo float-slow"><i class="fa-solid fa-shield-halved"></i></div>
+      <h1 class="text-2xl font-black text-gray-900 mb-1">Админ панель</h1>
+      <p class="text-sm text-gray-500 mb-6">Захиалга хянах хэсэгт нэвтэрнэ үү.</p>
+
+      <div id="admin-login-error" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm font-semibold rounded-xl px-4 py-3 mb-5"></div>
+
+      <form id="admin-login-form" class="space-y-4" novalidate>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">Имэйл хаяг</label>
+          <div class="relative">
+            <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input id="admin-email" type="email" required placeholder="admin@turgunhazalt.mn"
+                   class="admin-input pl-11" value="admin@turgunhazalt.mn">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1.5">Нууц үг</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input id="admin-password" type="password" required placeholder="••••••••"
+                   class="admin-input pl-11" value="admin123">
+          </div>
+        </div>
+        <button type="submit" class="admin-btn admin-btn-primary w-full py-3.5">
+          <i class="fa-solid fa-right-to-bracket"></i> Нэвтрэх
+        </button>
+      </form>
+
+      <a href="../index.html" class="block text-center text-sm font-bold text-gray-500 hover:text-red-600 mt-5 transition">
+        <i class="fa-solid fa-arrow-left mr-1"></i> Сайт руу буцах
+      </a>
+    </div>
+  </div>
+
+  <!-- ================= АДМИН АПП ================= -->
+  <div id="admin-app" class="admin-shell">
+
+    <!-- Sidebar -->
+    <aside id="admin-sidebar" class="admin-sidebar">
+      <div class="brand">
+        <i class="fa-solid fa-burger"></i>
+        <span>ТҮРГЭН <em>ХАЗАЛТ</em></span>
+      </div>
+      <div class="nav-group">
+        <p class="nav-group-title">Удирдлага</p>
+        <a href="index.html" class="admin-nav-link">
+          <i class="fa-solid fa-gauge-high"></i> Хяналтын самбар
+        </a>
+        <a href="orders.html" class="admin-nav-link active">
+          <i class="fa-solid fa-receipt"></i> Захиалга хянах
+          <span id="nav-pending-badge" class="nav-badge">0</span>
+        </a>
+        <p class="nav-group-title">Тохиргоо</p>
+        <a href="../index.html" class="admin-nav-link">
+          <i class="fa-solid fa-globe"></i> Хэрэглэгчийн сайт
+        </a>
+        <a href="../menu.html" class="admin-nav-link">
+          <i class="fa-solid fa-utensils"></i> Хоолны цэс
+        </a>
+      </div>
+      <div class="p-3 border-t border-white/10">
+        <button onclick="adminLogout()" class="admin-nav-link w-full text-left">
+          <i class="fa-solid fa-right-from-bracket"></i> Гарах
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="admin-main">
+
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <div class="flex items-center gap-3">
+          <button onclick="toggleAdminSidebar()" class="lg:hidden w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition" aria-label="Цэс">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div>
+            <h1 class="font-black text-gray-900 text-lg leading-tight">Захиалга хянах систем</h1>
+            <p class="text-xs text-gray-500 flex items-center gap-1.5">
+              <span class="live-dot"></span> Шинэ захиалга автоматаар харагдана
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="sound-toggle" onclick="toggleSound()" class="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition flex items-center justify-center" title="Дуут мэдэгдэл">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+          <button onclick="exportCSV()" class="admin-btn admin-btn-light hidden sm:inline-flex">
+            <i class="fa-solid fa-file-csv"></i> CSV
+          </button>
+          <div class="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
+            <span id="admin-avatar" class="w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-amber-500 text-white text-xs font-black flex items-center justify-center">A</span>
+            <span id="admin-user-name" class="text-sm font-bold text-gray-700 hidden sm:inline">Админ</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="admin-content">
+
+        <!-- Шүүлт & хайлт -->
+        <section class="panel mb-6 no-print">
+          <div class="flex flex-col lg:flex-row gap-4 mb-5">
+            <div class="flex-1">
+              <label class="block text-xs font-black uppercase tracking-wider text-gray-500 mb-2">
+                <i class="fa-solid fa-magnifying-glass mr-1 text-red-600"></i> Хайлт
+              </label>
+              <input id="admin-search" type="text" autocomplete="off"
+                     placeholder="Захиалгын код, хэрэглэгчийн нэр, утас, хаяг, хоолны нэр..."
+                     class="admin-input">
+            </div>
+            <div class="lg:w-60">
+              <label class="block text-xs font-black uppercase tracking-wider text-gray-500 mb-2">
+                <i class="fa-solid fa-arrow-down-wide-short mr-1 text-amber-500"></i> Эрэмбэлэх
+              </label>
+              <select id="admin-sort" onchange="setAdminSort(this.value)" class="admin-input font-semibold">
+                <option value="newest">Шинэ нь эхэндээ</option>
+                <option value="oldest">Хуучин нь эхэндээ</option>
+                <option value="amount-desc">Дүн: их → бага</option>
+                <option value="amount-asc">Дүн: бага → их</option>
+              </select>
+            </div>
+            <div class="lg:w-40 flex items-end">
+              <button onclick="exportCSV()" class="admin-btn admin-btn-dark w-full">
+                <i class="fa-solid fa-download"></i> Экспорт
+              </button>
+            </div>
+          </div>
+
+          <!-- Төлөвийн табууд -->
+          <div id="status-tabs" class="flex flex-wrap gap-2"></div>
+
+          <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 flex-wrap gap-2">
+            <p id="orders-count" class="text-sm font-semibold text-gray-500"></p>
+            <p class="text-xs text-gray-400"><i class="fa-solid fa-rotate mr-1"></i> 4 секунд тутамд автоматаар шинэчлэгдэнэ</p>
+          </div>
+        </section>
+
+        <!-- Захиалгын жагсаалт -->
+        <div id="orders-list"></div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Гар утасны sidebar backdrop -->
+  <div id="sidebar-backdrop" class="sidebar-backdrop hidden lg:hidden" onclick="toggleAdminSidebar()"></div>
+
+  <!-- Firebase Realtime Database (CDN, Compat v10) — админ реал-тайм синк -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="admin.js"></script>
+  <script>
+    function toggleAdminSidebar() {
+      const sb = document.getElementById("admin-sidebar");
+      const bd = document.getElementById("sidebar-backdrop");
+      const open = sb.classList.toggle("open");
+      bd.classList.toggle("hidden", !open);
+    }
+  </script>
+</body>
+</html>

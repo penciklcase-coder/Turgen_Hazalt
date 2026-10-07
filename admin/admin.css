@@ -1,0 +1,461 @@
+/* =====================================================================
+   "ТҮРГЭН ХАЗАЛТ" — АДМИН ПАНЕЛИЙН CSS (admin/admin.css)
+   Энэ файл нь админ фолдерт тусдаа ажиллана. Брэнд өнгө: Red-600 + Amber-500
+   ===================================================================== */
+
+:root {
+  --brand-red: #dc2626;
+  --brand-red-dark: #b91c1c;
+  --brand-amber: #f59e0b;
+  --brand-amber-light: #fbbf24;
+  --ink: #0f172a;
+  --sidebar-w: 260px;
+}
+
+* { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #f8fafc;
+}
+
+::selection { background: var(--brand-amber); color: #450a0a; }
+
+/* ============================ KEYFRAMES ============================ */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { 0% { opacity: 0; transform: scale(.95) translateY(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(120%) scale(.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes slideOutRight { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(120%) scale(.9); } }
+@keyframes progressShrink { from { width: 100%; } to { width: 0; } }
+@keyframes newOrderFlash { 0%, 100% { background-color: #fff; } 40% { background-color: #fff7ed; } }
+@keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.82); } }
+@keyframes floatSlow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+/* ============================ LAYOUT ============================ */
+.admin-shell { display: flex; min-height: 100vh; }
+
+.admin-sidebar {
+  width: var(--sidebar-w);
+  background: #0f172a;
+  color: #cbd5e1;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  transition: transform .3s cubic-bezier(.2, .9, .3, 1);
+}
+.admin-sidebar .brand {
+  padding: 1.4rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #fff;
+}
+.admin-sidebar .brand i { color: var(--brand-red); font-size: 1.4rem; }
+.admin-sidebar .brand span em { color: var(--brand-amber); font-style: normal; }
+
+.nav-group { padding: .9rem .75rem; flex: 1; overflow-y: auto; }
+.nav-group-title {
+  font-size: .62rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #64748b;
+  padding: .6rem .9rem .4rem;
+}
+.admin-nav-link {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .7rem .9rem;
+  border-radius: .75rem;
+  font-size: .875rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  transition: background-color .22s ease, color .22s ease, transform .22s ease;
+}
+.admin-nav-link i { width: 1.15rem; text-align: center; color: #64748b; transition: color .22s ease; }
+.admin-nav-link:hover { background: rgba(255, 255, 255, .07); color: #fff; transform: translateX(3px); }
+.admin-nav-link:hover i { color: var(--brand-amber); }
+.admin-nav-link.active {
+  background: linear-gradient(100deg, var(--brand-red), var(--brand-red-dark));
+  color: #fff;
+  box-shadow: 0 12px 24px -14px rgba(220, 38, 38, .9);
+}
+.admin-nav-link.active i { color: #fff; }
+.admin-nav-link .nav-badge {
+  margin-left: auto;
+  background: var(--brand-amber);
+  color: #451a03;
+  font-size: .65rem;
+  font-weight: 900;
+  padding: .1rem .45rem;
+  border-radius: 9999px;
+}
+
+.admin-main { flex: 1; margin-left: var(--sidebar-w); display: flex; flex-direction: column; min-width: 0; }
+
+.admin-topbar {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: .85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.admin-content { padding: 1.75rem 1.5rem 3rem; flex: 1; }
+
+.live-dot {
+  width: .55rem; height: .55rem;
+  border-radius: 9999px;
+  background: #22c55e;
+  display: inline-block;
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+
+/* ============================ КАРТ ============================ */
+.stat-card {
+  background: #fff;
+  border: 1px solid #e9eef5;
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp .5s cubic-bezier(.21, .9, .29, 1) both;
+  transition: transform .3s cubic-bezier(.21, .9, .29, 1), box-shadow .3s ease;
+}
+.stat-card:hover { transform: translateY(-5px); box-shadow: 0 22px 40px -22px rgba(15, 23, 42, .45); }
+.stat-card::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+}
+.stat-red::after     { background: var(--brand-red); }
+.stat-amber::after   { background: var(--brand-amber); }
+.stat-indigo::after  { background: #6366f1; }
+.stat-green::after   { background: #16a34a; }
+
+.stat-icon {
+  width: 2.6rem; height: 2.6rem;
+  border-radius: .85rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem;
+  margin-bottom: .75rem;
+}
+.stat-red .stat-icon    { background: #fee2e2; color: var(--brand-red); }
+.stat-amber .stat-icon  { background: #fef3c7; color: #b45309; }
+.stat-indigo .stat-icon { background: #e0e7ff; color: #4f46e5; }
+.stat-green .stat-icon  { background: #dcfce7; color: #16a34a; }
+
+.stat-value { font-size: 1.65rem; font-weight: 900; color: var(--ink); line-height: 1.1; }
+.stat-label { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin-top: .25rem; }
+.stat-sub { font-size: .72rem; color: #94a3b8; margin-top: .55rem; font-weight: 600; }
+
+.panel {
+  background: #fff;
+  border: 1px solid #e9eef5;
+  border-radius: 1.25rem;
+  padding: 1.25rem 1.4rem;
+  animation: fadeInUp .5s cubic-bezier(.21, .9, .29, 1) both;
+}
+.panel-title {
+  font-weight: 900;
+  color: var(--ink);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .9rem;
+}
+
+/* ============================ ТӨЛӨВИЙН ТЭМДЭГ ============================ */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .68rem;
+  font-weight: 900;
+  padding: .28rem .7rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.status-pending    { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+.status-preparing  { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+.status-delivering { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+.status-delivered  { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.status-cancelled  { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+
+.status-dot { width: .5rem; height: .5rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+
+/* ============================ ЗАХИАЛГЫН МӨР ============================ */
+.order-row {
+  background: #fff;
+  border: 1px solid #e9eef5;
+  border-radius: 1.15rem;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: .85rem;
+  animation: fadeInUp .45s cubic-bezier(.21, .9, .29, 1) both;
+  transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+}
+.order-row:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 38px -24px rgba(15, 23, 42, .55);
+  border-color: rgba(220, 38, 38, .25);
+}
+.new-order-row { animation: newOrderFlash 2.2s ease 2; border-color: var(--brand-amber); }
+
+.status-btn {
+  width: 2rem; height: 2rem;
+  border-radius: .6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  transition: transform .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.status-btn:hover { transform: translateY(-2px) scale(1.06); color: #fff; }
+.status-btn-pending:hover    { background: #f59e0b; border-color: #f59e0b; }
+.status-btn-preparing:hover  { background: #3b82f6; border-color: #3b82f6; }
+.status-btn-delivering:hover { background: #6366f1; border-color: #6366f1; }
+.status-btn-delivered:hover  { background: #16a34a; border-color: #16a34a; }
+.status-btn-cancelled:hover  { background: #dc2626; border-color: #dc2626; }
+.status-btn-info:hover       { background: #0f172a; border-color: #0f172a; }
+
+/* ============================ ФИЛЬТРИЙН ТАБ ============================ */
+.status-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem .95rem;
+  border-radius: 9999px;
+  font-size: .8rem;
+  font-weight: 800;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  transition: all .25s cubic-bezier(.2, .9, .3, 1.2);
+}
+.status-tab:hover { transform: translateY(-2px); border-color: rgba(220, 38, 38, .35); color: var(--brand-red); box-shadow: 0 12px 22px -16px rgba(220, 38, 38, .8); }
+.status-tab.active {
+  background: linear-gradient(120deg, var(--brand-red), var(--brand-red-dark) 60%, var(--brand-amber) 170%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 14px 26px -16px rgba(220, 38, 38, .9);
+}
+.status-tab .tab-count {
+  font-size: .62rem;
+  font-weight: 900;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: .05rem .4rem;
+  border-radius: 9999px;
+}
+.status-tab.active .tab-count { background: var(--brand-amber); color: #451a03; }
+
+/* ============================ TOAST ============================ */
+.toast-container {
+  position: fixed;
+  top: 1.25rem; right: 1.25rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  pointer-events: none;
+  max-width: calc(100vw - 2.5rem);
+}
+.toast {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  min-width: 280px;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 1rem;
+  padding: .9rem 2.4rem .95rem 1rem;
+  box-shadow: 0 20px 45px -18px rgba(0, 0, 0, .35);
+  border: 1px solid #f1f5f9;
+  border-left-width: 5px;
+  animation: slideInRight .45s cubic-bezier(.21, .9, .29, 1.05) both;
+  overflow: hidden;
+}
+.toast-out { animation: slideOutRight .3s ease forwards; }
+.toast-success { border-left-color: #16a34a; }
+.toast-error   { border-left-color: var(--brand-red); }
+.toast-warning { border-left-color: var(--brand-amber); }
+.toast-info    { border-left-color: #2563eb; }
+.toast-icon { width: 2.1rem; height: 2.1rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.toast-success .toast-icon { background: #dcfce7; color: #16a34a; }
+.toast-error .toast-icon   { background: #fee2e2; color: var(--brand-red); }
+.toast-warning .toast-icon { background: #fef3c7; color: #b45309; }
+.toast-info .toast-icon    { background: #dbeafe; color: #2563eb; }
+.toast-body { flex: 1; min-width: 0; }
+.toast-title { font-weight: 800; font-size: .82rem; color: var(--ink); }
+.toast-message { font-size: .78rem; color: #64748b; margin-top: .15rem; }
+.toast-close { position: absolute; top: .5rem; right: .6rem; width: 1.4rem; height: 1.4rem; border-radius: 9999px; color: #cbd5e1; display: flex; align-items: center; justify-content: center; }
+.toast-close:hover { background: #f1f5f9; color: #475569; }
+.toast-progress { position: absolute; bottom: 0; left: 0; height: 3px; background: currentColor; opacity: .25; animation: progressShrink 3.6s linear forwards; }
+.toast-success .toast-progress { color: #16a34a; }
+.toast-error .toast-progress   { color: var(--brand-red); }
+.toast-warning .toast-progress { color: var(--brand-amber); }
+.toast-info .toast-progress    { color: #2563eb; }
+
+/* ============================ МОДАЛ ============================ */
+.modal-panel { animation: popIn .4s cubic-bezier(.21, .9, .29, 1.05) both; }
+
+/* ============================ LOGIN GATE ============================ */
+.gate-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(220, 38, 38, .18), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(245, 158, 11, .22), transparent 45%),
+    #0f172a;
+}
+.gate-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 1.75rem;
+  padding: 2.2rem;
+  box-shadow: 0 40px 80px -40px rgba(0, 0, 0, .7);
+  animation: popIn .5s cubic-bezier(.21, .9, .29, 1.05) both;
+}
+.gate-logo {
+  width: 3.6rem; height: 3.6rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(135deg, var(--brand-red), var(--brand-amber));
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1.1rem;
+  box-shadow: 0 18px 35px -18px rgba(220, 38, 38, .9);
+}
+
+/* ============================ INPUT ============================ */
+.admin-input {
+  width: 100%;
+  padding: .75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: .85rem;
+  background: #f8fafc;
+  font-size: .875rem;
+  transition: border-color .25s ease, box-shadow .25s ease, background-color .25s ease;
+}
+.admin-input:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--brand-red);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, .13);
+}
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  font-weight: 800;
+  padding: .75rem 1.25rem;
+  border-radius: .85rem;
+  transition: transform .22s ease, background-color .22s ease, box-shadow .22s ease, color .22s ease;
+}
+.admin-btn:active { transform: scale(.98); }
+.admin-btn-primary { background: var(--brand-red); color: #fff; box-shadow: 0 14px 26px -16px rgba(220, 38, 38, .9); }
+.admin-btn-primary:hover { background: var(--brand-red-dark); transform: translateY(-2px); }
+.admin-btn-dark { background: #0f172a; color: #fff; }
+.admin-btn-dark:hover { background: #1e293b; transform: translateY(-2px); }
+.admin-btn-light { background: #f1f5f9; color: #334155; }
+.admin-btn-light:hover { background: #e2e8f0; transform: translateY(-2px); }
+
+/* ============================ SCROLLBAR ============================ */
+.admin-scroll::-webkit-scrollbar, .nav-group::-webkit-scrollbar { width: 6px; }
+.admin-scroll::-webkit-scrollbar-thumb, .nav-group::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+body::-webkit-scrollbar { width: 10px; }
+body::-webkit-scrollbar-track { background: #f1f5f9; }
+body::-webkit-scrollbar-thumb { background: linear-gradient(var(--brand-red), var(--brand-amber)); border-radius: 9999px; border: 2px solid #f1f5f9; }
+
+.float-slow { animation: floatSlow 5s ease-in-out infinite; }
+
+/* Текстийг 2 мөрөөр хязгаарлах */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================ ГАР УТАСНЫ SIDEBAR ============================ */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .55);
+  backdrop-filter: blur(3px);
+  z-index: 35;
+  animation: popIn .25s ease both;
+}
+
+/* ============================ РЕСПОНСИВ ============================ */
+@media (max-width: 1024px) {
+  .admin-sidebar { transform: translateX(-100%); box-shadow: 0 0 60px rgba(0, 0, 0, .5); }
+  .admin-sidebar.open { transform: translateX(0); }
+  .admin-main { margin-left: 0; }
+  .admin-content { padding: 1.25rem 1rem 3rem; }
+  .toast-container { left: .75rem; right: .75rem; }
+  .toast { min-width: 0; max-width: 100%; }
+}
+
+/* ============================ МОБАЙЛ АДМИН (KFC-апп маяг, нэмэлт) ============================
+   Утсан дээр захиалга хянах: том товчлуур (44px+), картууд 1 багана, bottom-sheet дэлгэрэнгүй. */
+@media (max-width: 768px) {
+  button, .admin-btn, .status-btn, .status-tab {
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .status-btn { width: 2.75rem; height: 2.75rem; font-size: .9rem; border-radius: .8rem; }
+  .status-tab { min-height: 46px; font-size: .85rem; }
+  .admin-input, select.admin-input { min-height: 48px; font-size: 16px !important; }
+  .stat-card { border-radius: 1.1rem; padding: 1rem; }
+  .stat-value { font-size: 1.4rem; }
+  .order-row { border-radius: 1.1rem; padding: 1rem; }
+  .order-row .text-right { text-align: left !important; width: 100%; }
+  .order-row .flex.flex-wrap.justify-end { justify-content: flex-start !important; }
+  #order-detail-modal { align-items: flex-end !important; padding: 0 !important; }
+  #order-detail-modal > div { border-radius: 1.5rem 1.5rem 0 0 !important; max-height: 94dvh !important; }
+  .admin-topbar { padding: .7rem 1rem; }
+  .admin-content { padding: 1rem .75rem 5rem; }
+}
+
+/* ============================ ХЭВЛЭХ ============================ */
+@media print {
+  .admin-sidebar, .admin-topbar, .toast-container, .no-print { display: none !important; }
+  .admin-main { margin-left: 0; }
+  body { background: #fff; }
+}
+
+/* ============================ ХҮРТЭЭМЖТЭЙ БАЙДАЛ ============================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}

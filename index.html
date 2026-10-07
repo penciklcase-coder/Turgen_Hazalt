@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Түргэн Хазалт — 100 төрлийн амттай хоолыг 30 минутын дотор хүргэнэ.">
+  <title>Түргэн Хазалт - Нүүр хуудас</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="home" class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+      <a href="index.html" class="flex items-center gap-2 text-xl sm:text-2xl font-black text-red-600 flex-shrink-0">
+        <i class="fa-solid fa-burger text-2xl sm:text-3xl"></i>
+        <span>ТҮРГЭН <span class="text-amber-500">ХАЗАЛТ</span></span>
+      </a>
+
+      <nav class="hidden md:flex items-center space-x-8 font-semibold text-gray-600">
+        <a href="index.html" class="text-red-600 font-bold">Нүүр</a>
+        <a href="menu.html" class="hover:text-red-600 transition">Цэс</a>
+        <a href="promos.html" class="hover:text-red-600 transition">Урамшуулал</a>
+        <a href="about.html" class="hover:text-red-600 transition">Бидний тухай</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <!-- Хэрэглэгчийн хэсэг + сагс (script.js автоматаар зурна) -->
+        <div id="header-actions"></div>
+        <!-- Гар утасны цэс (script.js автоматаар зурна) -->
+        <div id="mobile-nav-slot"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-gradient relative text-white py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <div class="hero-blob bg-amber-300 w-72 h-72 -top-20 -left-16"></div>
+    <div class="hero-blob bg-white w-80 h-80 -bottom-32 right-0"></div>
+
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10 relative">
+      <div class="max-w-xl text-center md:text-left">
+        <span class="bg-white/20 backdrop-blur text-white text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full pulse-ring inline-block">
+          <i class="fa-solid fa-bolt text-amber-300 mr-1"></i> 30 МИНУТЫН ХҮРГЭЛТ
+        </span>
+        <h1 class="text-4xl sm:text-6xl font-extrabold mt-5 leading-tight">
+          Халуухан &amp; Амталгаатай <span class="text-amber-300">Хоол</span> Хүргэлт
+        </h1>
+        <p class="mt-4 text-red-50 text-lg">
+          Шинэхэн орцоор бэлтгэсэн 100 төрлийн хоол, 8 төрлийн хэмнэлттэй багцыг түргэн шуурхай таны гар дээр хүргэнэ.
+        </p>
+        <div class="flex flex-wrap gap-3 mt-7 justify-center md:justify-start">
+          <a href="menu.html" class="btn-shine bg-white text-red-600 font-extrabold px-8 py-3.5 rounded-full shadow-lg hover:bg-gray-100 transition">
+            <i class="fa-solid fa-utensils mr-1"></i> Цэс үзэх &amp; Захиалах
+          </a>
+          <a href="menu.html?cat=combo" class="bg-amber-400 text-red-950 font-extrabold px-8 py-3.5 rounded-full shadow-lg hover:bg-amber-300 transition">
+            <i class="fa-solid fa-box-open mr-1"></i> Багц хоол үзэх
+          </a>
+        </div>
+
+        <!-- Статистик (script.js-ээр бөглөгдөнө) -->
+        <div id="hero-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-10 max-w-lg mx-auto md:mx-0"></div>
+      </div>
+
+      <div class="w-full max-w-md relative">
+        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80"
+             alt="Амттай бургер" class="rounded-3xl shadow-2xl hero-float relative z-10">
+        <div class="absolute -bottom-5 -left-5 bg-white text-gray-900 rounded-2xl shadow-xl p-4 z-20 hidden sm:block">
+          <p class="text-2xl font-black text-red-600">4.9<span class="text-amber-400 text-lg">★</span></p>
+          <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500">12,400+ сэтгэгдэл</p>
+        </div>
+        <div class="absolute -top-5 -right-4 bg-amber-400 text-red-950 rounded-2xl shadow-xl px-4 py-3 z-20 hidden sm:block">
+          <p class="text-sm font-black"><i class="fa-solid fa-motorcycle mr-1"></i> Хүргэлт үнэгүй</p>
+          <p class="text-[11px] font-bold">35,000₮-с дээш</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-grow space-y-16 w-full">
+
+    <!-- Ангилал руу хурдан очих (script.js-ээр автоматаар зурагдана) -->
+    <section>
+      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <h2 class="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-layer-group text-red-600"></i> Ангилалаар сонгох
+        </h2>
+        <a href="menu.html?cat=combo" class="bg-amber-400 hover:bg-amber-500 text-red-950 text-sm font-black px-5 py-2.5 rounded-full transition shadow-lg shadow-amber-200">
+          <i class="fa-solid fa-box-open mr-1"></i> Багц хоол үзэх
+        </a>
+      </div>
+      <div id="category-tiles" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4"></div>
+    </section>
+
+    <!-- ============ БАГЦ ХООЛНУУД (COMBO SETS) ============ -->
+    <section class="relative rounded-3xl overflow-hidden border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-red-50 p-6 sm:p-8">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-7">
+        <div>
+          <span class="inline-block bg-gradient-to-r from-red-600 to-amber-500 text-white text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">
+            <i class="fa-solid fa-piggy-bank mr-1"></i> Хэмнэлттэй багцууд
+          </span>
+          <h2 class="text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-box-open text-amber-500"></i> Багц хоолнууд
+          </h2>
+          <p class="text-gray-600 text-sm mt-1">
+            <span id="combo-count">8</span> төрлийн хослол багц — дангаар авахаас хямд, хамтдаа илүү амттай.
+            Хамгийн ихдээ <span id="combo-max-save" class="font-black text-red-600">0 ₮</span> хэмнэнэ.
+          </p>
+        </div>
+        <a href="menu.html?cat=combo" class="text-red-600 font-bold hover:underline flex-shrink-0">Бүх багцыг харах &rarr;</a>
+      </div>
+      <div id="combo-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </section>
+
+    <!-- Popular Foods Section -->
+    <section>
+      <div class="flex items-center justify-between mb-8 flex-wrap gap-3">
+        <div>
+          <h2 class="text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-fire text-red-600"></i> Хамгийн их борлуулалттай
+          </h2>
+          <p class="text-gray-500 text-sm mt-1">Хэрэглэгчдийн хамгийн дуртай амталгаат хоолнууд</p>
+        </div>
+        <a href="menu.html" class="text-red-600 font-bold hover:underline">Бүх хоолыг харах &rarr;</a>
+      </div>
+
+      <!-- Dynamic popular grid -->
+      <div id="popular-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </section>
+
+    <!-- Яагаад бид гэж? -->
+    <section>
+      <div class="text-center max-w-2xl mx-auto mb-10">
+        <h2 class="text-3xl font-extrabold text-gray-900">Яагаад Түргэн Хазалт гэж?</h2>
+        <p class="text-gray-500 mt-2">Бид танд зөвхөн хоол биш, амтат мэдрэмж болон цаг хугацааг бэлэглэнэ.</p>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="feature-card bg-white p-7 rounded-2xl border border-gray-100 shadow-sm text-center">
+          <div class="feature-icon w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl"><i class="fa-solid fa-leaf"></i></div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">100% Шинэ орц</h3>
+          <p class="text-gray-600 text-sm">Өдөр бүр шинээр бэлтгэсэн мах, ногоо, гараар хийсэн сүмсүүд.</p>
+        </div>
+        <div class="feature-card bg-white p-7 rounded-2xl border border-gray-100 shadow-sm text-center">
+          <div class="feature-icon w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl"><i class="fa-solid fa-motorcycle"></i></div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Түргэн хүргэлт</h3>
+          <p class="text-gray-600 text-sm">Дулаан хадгалагч цүнхээр хоолыг халуунаар нь хүргэнэ.</p>
+        </div>
+        <div class="feature-card bg-white p-7 rounded-2xl border border-gray-100 shadow-sm text-center">
+          <div class="feature-icon w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl"><i class="fa-solid fa-box-open"></i></div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Хэмнэлттэй багц</h3>
+          <p class="text-gray-600 text-sm">8 төрлийн хослол багц — дангаар авахаас 12-15% хямд үнэтэй.</p>
+        </div>
+        <div class="feature-card bg-white p-7 rounded-2xl border border-gray-100 shadow-sm text-center">
+          <div class="feature-icon w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl"><i class="fa-solid fa-mobile-screen"></i></div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Бодит цагийн хяналт</h3>
+          <p class="text-gray-600 text-sm">Захиалгын төлөвийг профайлаас бодит цагт хянаарай.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="bg-gray-900 text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
+      <div class="hero-blob bg-red-600 w-72 h-72 -top-24 -right-10"></div>
+      <div class="relative flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="text-center md:text-left">
+          <h2 class="text-3xl font-black mb-2">Өлсөж байна уу? Захиалгаа одоо хийгээрэй!</h2>
+          <p class="text-gray-400">Бүртгүүлээд захиалгын түүхээ хянах боломжтой. Хүргэлт 30 минутын дотор.</p>
+        </div>
+        <div class="flex gap-3 flex-shrink-0">
+          <a href="register.html" class="btn-shine bg-red-600 hover:bg-red-700 text-white font-bold px-7 py-3.5 rounded-full transition shadow-lg shadow-red-900/40">Бүртгүүлэх</a>
+          <a href="menu.html" class="bg-white/10 border border-white/30 hover:bg-white/20 text-white font-bold px-7 py-3.5 rounded-full transition">Цэс үзэх</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 grid sm:grid-cols-3 gap-8 text-center sm:text-left">
+      <div>
+        <p class="font-black text-white text-lg mb-2 flex items-center gap-2 justify-center sm:justify-start">
+          <i class="fa-solid fa-burger text-red-500"></i> ТҮРГЭН <span class="text-amber-500">ХАЗАЛТ</span>
+        </p>
+        <p class="text-sm">Амттай хоолыг хамгийн хурдан шуурхай хүргэх онлайн платформ.</p>
+      </div>
+      <div>
+        <p class="font-bold text-white mb-3">Холбоос</p>
+        <div class="flex flex-col gap-1.5 text-sm">
+          <a href="menu.html" class="hover:text-red-500 transition">Хоолны цэс</a>
+          <a href="promos.html" class="hover:text-red-500 transition">Урамшуулал</a>
+          <a href="orders.html" class="hover:text-red-500 transition">Миний захиалгууд</a>
+          <a href="admin/index.html" class="hover:text-red-500 transition">Админ панель</a>
+        </div>
+      </div>
+      <div>
+        <p class="font-bold text-white mb-3">Холбоо барих</p>
+        <p class="text-sm"><i class="fa-solid fa-phone mr-1 text-amber-500"></i> +976 7711-2233</p>
+        <p class="text-sm"><i class="fa-solid fa-envelope mr-1 text-amber-500"></i> info@turgunhazalt.mn</p>
+        <p class="text-sm mt-2">© 2026 Онлайн хоол захиалгын систем.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Firebase Realtime Database (CDN, Compat v10) — онлайн захиалга синк -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

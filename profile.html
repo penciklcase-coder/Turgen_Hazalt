@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Миний профайл - Түргэн Хазалт</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="profile" class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+      <a href="index.html" class="flex items-center gap-2 text-xl sm:text-2xl font-black text-red-600 flex-shrink-0">
+        <i class="fa-solid fa-burger text-2xl sm:text-3xl"></i>
+        <span>ТҮРГЭН <span class="text-amber-500">ХАЗАЛТ</span></span>
+      </a>
+      <nav class="hidden md:flex items-center space-x-8 font-semibold text-gray-600">
+        <a href="index.html" class="hover:text-red-600 transition">Нүүр</a>
+        <a href="menu.html" class="hover:text-red-600 transition">Цэс</a>
+        <a href="promos.html" class="hover:text-red-600 transition">Урамшуулал</a>
+        <a href="about.html" class="hover:text-red-600 transition">Бидний тухай</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <div id="header-actions"></div>
+        <div id="mobile-nav-slot"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div class="bg-gray-900 text-white py-10">
+    <div class="max-w-7xl mx-auto px-4">
+      <h1 class="text-3xl font-extrabold flex items-center gap-3">
+        <i class="fa-solid fa-id-badge text-amber-400"></i> Миний профайл
+      </h1>
+      <p class="text-gray-400 text-sm mt-1">Хувийн мэдээлэл, захиалгын түүхээ эндээс удирдана уу.</p>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-grow py-10 w-full">
+    <div id="profile-root"></div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-400 py-8 border-t border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 text-center text-sm">
+      <p class="font-bold text-white mb-1">ТҮРГЭН ХАЗАЛТ Food Delivery</p>
+      <p>© 2026 Онлайн хоол захиалгын систем. Лабораторийн ажилд зориулав.</p>
+    </div>
+  </footer>
+
+  <!-- Firebase Realtime Database (CDN, Compat v10) — онлайн захиалга синк -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
