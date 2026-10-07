@@ -27,7 +27,8 @@ const ADMIN_CONFIG = {
    Firebase үүсгэх заавар script.js-ийн дээд хэсэгт (0-р бүлэг) бий.
    Rules жишээ:
    { "rules": { "orders": { ".read": true, ".write": true },
-                "users":  { ".read": true, ".write": true } } }
+                "users":  { ".read": true, ".write": true },
+                "menu":   { ".read": true, ".write": true } } }
 */
 const ADMIN_FIREBASE_CONFIG = {
   apiKey: "AIzaSyAc7Ycu-ASeXZ04_ds9_-XKzjcD1YfwwuI",
@@ -235,7 +236,16 @@ const ADMIN_STATUS = {
   cancelled:  { label: "Цуцлагдсан",        icon: "fa-circle-xmark",    cls: "cancelled" }
 };
 
-const PAYMENT_LABEL = { cash: "Бэлнээр", card: "Карт", transfer: "Дансаар" };
+const PAYMENT_LABEL = { cash: "Бэлнээр", card: "Карт", transfer: "Дансаар", qpay: "QPay" };
+
+/* Төлбөрийн статус тэмдэг: paid → ногоон, unpaid → улбар шар анхааруулга */
+function payStatusBadge(order) {
+  if (!order) return "";
+  if (order.paymentStatus === "unpaid") {
+    return `<span class="status-badge status-pending"><i class="fa-solid fa-hourglass-half"></i> Төлбөр хүлээгдэж байна</span>`;
+  }
+  return `<span class="status-badge status-delivered"><i class="fa-solid fa-circle-check"></i> Төлбөр төлөгдсөн</span>`;
+}
 
 /* ============================ ТӨЛӨВ ============================ */
 let adminFilter = "all";
@@ -504,6 +514,241 @@ function setOrderStatus(orderId, status) {
   renderAll();
 }
 
+/* ============================ ЦЭСНИЙ УДИРДЛАГА (MENU MANAGEMENT) ============================
+   Firebase `menu` замыг эх сурвалж болгоно. Cloud бэлэн биш бол localStorage
+   нөөц (`tz_menu`) ашиглана. Add / Edit / Delete / Дууссан-Идэвхтэй бүгд Cloud руу
+   бичигдэж, хэрэглэгчийн menu.html дээр reload-гүй шууд тусна. */
+const MENU_CACHE_KEY = "tz_menu";
+const MENU_CATS = [
+  { id: "burger", label: "Бургер & Хачир" },
+  { id: "chicken", label: "Тахианы мах" },
+  { id: "pizza", label: "Пицца & Сэндвич" },
+  { id: "asian", label: "Ази & Түргэн хоол" },
+  { id: "dessert", label: "Амттан" },
+  { id: "drink", label: "Ундаа & Кофе" }
+];
+
+let adminMenu = [];
+let adminMenuSearch = "";
+
+function normalizeAdminMenuItem(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const id = Number(raw.id);
+  if (!id) return null;
+  return {
+    id,
+    name: String(raw.name || "Нэргүй хоол"),
+    category: String(raw.category || "burger"),
+    price: Math.max(0, Number(raw.price) || 0),
+    img: String(raw.img || ADMIN_CONFIG.fallbackImg),
+    desc: String(raw.desc || ""),
+    available: raw.available === false ? false : true
+  };
+}
+
+function menuArrayFromSnap(val) {
+  if (!val) return [];
+  const arr = Array.isArray(val) ? val : Object.values(val);
+  return arr.map(normalizeAdminMenuItem).filter(Boolean).sort((a, b) => a.id - b.id);
+}
+
+function getAdminMenu() {
+  return adminMenu.slice();
+}
+
+function saveAdminMenuCache() {
+  try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(adminMenu)); } catch (e) {}
+}
+
+function loadAdminMenuCache() {
+  try {
+    const raw = localStorage.getItem(MENU_CACHE_KEY);
+    if (!raw) return;
+    const arr = menuArrayFromSnap(JSON.parse(raw));
+    if (arr.length) adminMenu = arr;
+  } catch (e) { /* алгасна */ }
+}
+
+function subscribeAdminMenu() {
+  loadAdminMenuCache();
+  if (document.getElementById("menu-mgmt")) renderMenuMgmt();
+  if (!adminCloudReady()) return;
+  try {
+    ADMIN_CLOUD.db.ref('menu').on('value', (snap) => {
+      try {
+        const arr = menuArrayFromSnap(snap.val());
+        if (arr.length) {
+          adminMenu = arr;
+          saveAdminMenuCache();
+          if (document.getElementById("menu-mgmt")) renderMenuMgmt();
+        }
+      } catch (e) { console.warn("[Admin] menu parse алдаа:", e); }
+    });
+  } catch (e) { console.warn("[Admin] menu listen алдаа:", e); }
+}
+
+function writeMenuItemToCloud(item) {
+  if (!adminCloudReady() || !item || !item.id) return;
+  try { ADMIN_CLOUD.db.ref('menu/' + item.id).set(item).catch(() => {}); } catch (e) {}
+}
+
+function removeMenuItemFromCloud(id) {
+  if (!adminCloudReady() || !id) return;
+  try { ADMIN_CLOUD.db.ref('menu/' + id).remove().catch(() => {}); } catch (e) {}
+}
+
+function nextMenuId() {
+  return adminMenu.reduce((m, i) => Math.max(m, Number(i.id) || 0), 100) + 1;
+}
+
+function resetMenuForm() {
+  ["mm-id", "mm-name", "mm-price", "mm-desc", "mm-img"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  const cat = document.getElementById("mm-category");
+  if (cat) cat.value = "burger";
+  const prev = document.getElementById("mm-img-preview");
+  if (prev) prev.classList.add("hidden");
+  const btn = document.getElementById("mm-submit");
+  if (btn) btn.innerHTML = '<i class="fa-solid fa-plus"></i> Хоол нэмэх';
+  const cancel = document.getElementById("mm-cancel");
+  if (cancel) cancel.classList.add("hidden");
+}
+
+function handleMenuSubmit(e) {
+  e.preventDefault();
+  const idRaw = (document.getElementById("mm-id") || {}).value || "";
+  const name = ((document.getElementById("mm-name") || {}).value || "").trim();
+  const price = Number(((document.getElementById("mm-price") || {}).value || ""));
+  const desc = ((document.getElementById("mm-desc") || {}).value || "").trim();
+  const img = ((document.getElementById("mm-img") || {}).value || "").trim();
+  const category = ((document.getElementById("mm-category") || {}).value || "burger");
+  if (name.length < 2) { adminToast("Хоолны нэрийг оруулна уу.", "error"); return; }
+  if (!(price > 0)) { adminToast("Үнэ 0-ээс их байх ёстой.", "error"); return; }
+  if (idRaw) {
+    const id = Number(idRaw);
+    const idx = adminMenu.findIndex((i) => i.id === id);
+    if (idx === -1) { adminToast("Хоол олдсонгүй.", "error"); return; }
+    adminMenu[idx] = { ...adminMenu[idx], name, price, desc, img: img || ADMIN_CONFIG.fallbackImg, category };
+    writeMenuItemToCloud(adminMenu[idx]);
+    adminToast(`"${name}" шинэчлэгдлээ.`, "success", "Хадгалагдлаа");
+  } else {
+    const item = normalizeAdminMenuItem({ id: nextMenuId(), name, price, desc, img: img || ADMIN_CONFIG.fallbackImg, category, available: true });
+    adminMenu.push(item);
+    adminMenu.sort((a, b) => a.id - b.id);
+    writeMenuItemToCloud(item);
+    adminToast(`"${name}" цэсэнд нэмэгдлээ.`, "success", "Нэмэгдлээ");
+  }
+  saveAdminMenuCache();
+  resetMenuForm();
+  renderMenuMgmt();
+}
+
+function editMenuItem(id) {
+  const item = adminMenu.find((i) => i.id === Number(id));
+  if (!item) { adminToast("Хоол олдсонгүй.", "error"); return; }
+  const set = (eid, v) => { const el = document.getElementById(eid); if (el) el.value = v; };
+  set("mm-id", item.id);
+  set("mm-name", item.name);
+  set("mm-price", item.price);
+  set("mm-desc", item.desc || "");
+  set("mm-img", item.img || "");
+  set("mm-category", item.category);
+  const prev = document.getElementById("mm-img-preview");
+  if (prev && item.img) { prev.src = item.img; prev.classList.remove("hidden"); }
+  const btn = document.getElementById("mm-submit");
+  if (btn) btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Хадгалах';
+  const cancel = document.getElementById("mm-cancel");
+  if (cancel) cancel.classList.remove("hidden");
+  const sec = document.getElementById("menu-mgmt");
+  if (sec && sec.scrollIntoView) sec.scrollIntoView({ behavior: "smooth" });
+}
+
+function deleteMenuItem(id) {
+  const item = adminMenu.find((i) => i.id === Number(id));
+  if (!item) { adminToast("Хоол олдсонгүй.", "error"); return; }
+  if (!confirm(`"${item.name}"-г цэснээс устгах уу?`)) return;
+  adminMenu = adminMenu.filter((i) => i.id !== Number(id));
+  removeMenuItemFromCloud(Number(id));
+  saveAdminMenuCache();
+  adminToast(`"${item.name}" устгагдлаа.`, "info", "Устгагдлаа");
+  renderMenuMgmt();
+}
+
+function toggleMenuStock(id) {
+  const idx = adminMenu.findIndex((i) => i.id === Number(id));
+  if (idx === -1) { adminToast("Хоол олдсонгүй.", "error"); return; }
+  adminMenu[idx] = { ...adminMenu[idx], available: !(adminMenu[idx].available === false ? false : true) };
+  writeMenuItemToCloud(adminMenu[idx]);
+  saveAdminMenuCache();
+  adminToast(
+    adminMenu[idx].available ? `"${adminMenu[idx].name}" идэвхтэй боллоо.` : `"${adminMenu[idx].name}" дууссан гэж тэмдэглэгдлээ.`,
+    adminMenu[idx].available ? "success" : "warning",
+    "Төлөв өөрчлөгдлөө"
+  );
+  renderMenuMgmt();
+}
+
+function previewMenuImg() {
+  const url = ((document.getElementById("mm-img") || {}).value || "").trim();
+  const prev = document.getElementById("mm-img-preview");
+  if (!prev) return;
+  if (url) { prev.src = url; prev.classList.remove("hidden"); }
+  else prev.classList.add("hidden");
+}
+
+function onMenuSearch(v) {
+  adminMenuSearch = String(v || "");
+  clearTimeout(window.__menuSearchTimer);
+  window.__menuSearchTimer = setTimeout(() => renderMenuMgmt(), 250);
+}
+
+function renderMenuMgmt() {
+  const sec = document.getElementById("menu-mgmt");
+  if (!sec) return;
+  const list = document.getElementById("menu-list");
+  const countEl = document.getElementById("menu-count");
+  const q = adminMenuSearch.toLowerCase().trim();
+  const items = adminMenu.filter((i) => {
+    if (!q) return true;
+    return [i.name, i.desc, String(i.price)].join(" ").toLowerCase().includes(q);
+  });
+  if (countEl) countEl.textContent = `${items.length} хоол харагдаж байна (нийт ${adminMenu.length})`;
+  if (!list) return;
+  if (items.length === 0) {
+    list.innerHTML = `
+      <div class="text-center py-10">
+        <div class="w-16 h-16 mx-auto rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-2xl mb-3"><i class="fa-solid fa-bowl-food"></i></div>
+        <p class="font-bold text-gray-700">Хоол олдсонгүй</p>
+        <p class="text-sm text-gray-400 mt-1">Дээрх формоор шинэ хоол нэмнэ үү.</p>
+      </div>`;
+    return;
+  }
+  list.innerHTML = items.map((i) => `
+    <div class="menu-row ${i.available === false ? "menu-row-out" : ""}">
+      <img src="${escapeHtml(i.img)}" onerror="this.onerror=null;this.src='${ADMIN_CONFIG.fallbackImg}'" class="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="">
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-gray-900 text-sm truncate">${escapeHtml(i.name)}
+          ${i.available === false ? '<span class="ml-1 bg-gray-800 text-white text-[10px] font-black px-2 py-0.5 rounded-full">ДУУССАН</span>' : ""}
+        </p>
+        <p class="text-xs text-gray-500 truncate">${escapeHtml(i.desc || "—")}</p>
+        <p class="text-xs font-black text-red-600 mt-0.5">${money(i.price)}</p>
+      </div>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <button onclick="toggleMenuStock(${i.id})" class="status-btn ${i.available === false ? "status-btn-delivered" : "status-btn-pending"}" title="${i.available === false ? "Идэвхтэй болгох" : "Дууссан болгох"}">
+          <i class="fa-solid ${i.available === false ? "fa-circle-check" : "fa-circle-xmark"}"></i>
+        </button>
+        <button onclick="editMenuItem(${i.id})" class="status-btn status-btn-preparing" title="Засах">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <button onclick="deleteMenuItem(${i.id})" class="status-btn status-btn-cancelled" title="Устгах">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    </div>`).join("");
+}
+
 /* ============================ ШҮҮЛТ ============================ */
 function getFilteredOrders() {
   let list = loadOrders().slice();
@@ -638,7 +883,7 @@ function openOrderDetail(orderId) {
           </div>
           <div class="bg-gray-50 rounded-2xl p-4">
             <p class="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-2">Төлбөр &amp; Хугацаа</p>
-            <p class="text-sm text-gray-600">Төлбөрийн хэлбэр: <span class="font-bold text-gray-900">${PAYMENT_LABEL[order.payment] || "Бэлнээр"}</span></p>
+            <p class="text-sm text-gray-600">Төлбөрийн хэлбэр: <span class="font-bold text-gray-900">${PAYMENT_LABEL[order.payment] || "Бэлнээр"}</span> ${payStatusBadge(order)}</p>
             <p class="text-sm text-gray-600">Бүртгэл: <span class="font-bold text-gray-900">${order.userEmail ? escapeHtml(order.userEmail) : "Зочин"}</span></p>
             <p class="text-sm text-gray-600">Сүүлд шинэчлэгдсэн: <span class="font-bold text-gray-900">${formatDate(order.updatedAt)}</span></p>
             ${order.promoCode ? `<p class="text-sm text-green-600 font-bold mt-1"><i class="fa-solid fa-tag mr-1"></i>${escapeHtml(order.promoCode)} код ашиглагдсан</p>` : ""}
@@ -884,7 +1129,7 @@ function orderRowHTML(order) {
 
         <div class="text-right flex-shrink-0">
           <p class="text-xl font-black text-red-600">${money(order.total)}</p>
-          <p class="text-[11px] text-gray-400">${(order.items || []).reduce((s, i) => s + i.qty, 0)} ширхэг • ${PAYMENT_LABEL[order.payment] || "Бэлнээр"}</p>
+          <p class="text-[11px] text-gray-400">${(order.items || []).reduce((s, i) => s + i.qty, 0)} ширхэг • ${PAYMENT_LABEL[order.payment] || "Бэлнээр"} • ${order.paymentStatus === "unpaid" ? "төлбөр хүлээгдэж байна" : "төлбөр төлөгдсөн"}</p>
           <div class="flex flex-wrap gap-1.5 justify-end mt-2">
             ${Object.keys(ADMIN_STATUS).filter((s) => s !== order.status).map((s) => `
               <button onclick="setOrderStatus('${order.id}','${s}')" class="status-btn status-btn-${ADMIN_STATUS[s].cls}" title="${ADMIN_STATUS[s].label}">
@@ -973,6 +1218,7 @@ function renderAll() {
     renderStatusTabs();
     renderOrderList();
   }
+  if (document.getElementById("menu-mgmt")) renderMenuMgmt();
 }
 
 /* ============================ БОДИТ ЦАГИЙН ШИНЭЧЛЭЛ ============================ */
@@ -1075,9 +1321,15 @@ function initAdminPage() {
     renderAll();
     detectNewOrders();
     initRealtime();
+    try { subscribeAdminMenu(); } catch (e) { console.warn("[Admin] menu init алдаа:", e); }
 
     const searchInput = document.getElementById("admin-search");
     if (searchInput) searchInput.addEventListener("input", (e) => onAdminSearch(e.target.value));
+
+    const menuForm = document.getElementById("menu-form");
+    if (menuForm) menuForm.addEventListener("submit", handleMenuSubmit);
+    const menuSearch = document.getElementById("menu-search");
+    if (menuSearch) menuSearch.addEventListener("input", (e) => onMenuSearch(e.target.value));
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeOrderDetail();

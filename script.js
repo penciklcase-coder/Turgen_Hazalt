@@ -31,10 +31,9 @@
      5) Realtime Database → Rules → доорх дүрмийг тавиад Publish:
         {
           "rules": {
-            "turgun_hazalt": {
-              "orders": { ".read": true, ".write": true },
-              "users":  { ".read": true, ".write": true }
-            }
+            "orders": { ".read": true, ".write": true },
+            "users":  { ".read": true, ".write": true },
+            "menu":   { ".read": true, ".write": true }
           }
         }
         (Лабораторийн ажилд зориулсан нээлттэй дүрэм. Продакшнд Auth-тай
@@ -83,6 +82,9 @@ const FIREBASE_CONFIG = {
 /* Онлайн өгөгдлийн сангийн үндсэн замууд (шаардлагын дагуу яг 'orders'/'users') */
 const ORDERS_PATH = 'orders';
 const USERS_PATH = 'users';
+const MENU_PATH = 'menu';
+const MENU_SEED_KEY = 'tz_menu_seeded_v1';
+const MENU_CACHE_KEY = 'tz_menu';
 
 /* Cloud төлөв — гараас өөрчлөх шаардлагагүй */
 const CLOUD = {
@@ -91,6 +93,7 @@ const CLOUD = {
   auth: null,          // firebase.auth()
   ordersCache: null,   // Cloud-аас ирсэн захиалгын кэш (бодит цагийн)
   usersCache: null,    // Cloud-аас ирсэн хэрэглэгчийн кэш
+  menuCache: null,     // Cloud-аас ирсэн цэсний кэш (админ удирддаг)
   listeners: [],       // ordersUpdated дахин дуудагдах callback-ууд
   status: "local",     // local | connecting | online | error
   _saveTimer: null
@@ -247,6 +250,9 @@ async function initCloud() {
     CLOUD.db.ref(".info/connected").on("value", (s) => {
       if (s.val() === true) { if (CLOUD.status !== "online") setCloudStatus("online"); }
     });
+
+    // --- Цэсний сонсогч (админ удирдана: menu) ---
+    try { subscribeMenu(); } catch (e) { console.warn("[Cloud] menu subscribe алдаа:", e); }
 
     return true;
   } catch (e) {
@@ -652,7 +658,96 @@ const comboSets = [
 ];
 
 /* Бүх цэсний нэгдсэн жагсаалт: багц хоолнууд эхэндээ (тод харагдана) */
-const allItems = [...comboSets, ...foods];
+let allItems = [...comboSets, ...foods];
+
+/* ---------- Firebase `menu` замаас динамик цэс (админ удирдлага) ----------
+   Cloud-д цэс байвал түүнийг, үгүй бол кодон дахь үндсэн хоолнуудыг ашиглана.
+   Анх удаа хоосон үед үндсэн хоолнууд автоматаар seed хийгдэнэ. */
+let menuFoods = null;
+
+function normalizeMenuItem(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const id = Number(raw.id);
+  if (!id) return null;
+  return {
+    id,
+    name: String(raw.name || "Нэргүй хоол"),
+    category: String(raw.category || "burger"),
+    price: Math.max(0, Number(raw.price) || 0),
+    img: String(raw.img || CONFIG.fallbackImg),
+    desc: String(raw.desc || ""),
+    available: raw.available === false ? false : true,
+    tag: raw.tag || "",
+    serves: raw.serves || "",
+    isCombo: false
+  };
+}
+
+function menuSnapshotToArray(val) {
+  if (!val) return [];
+  const arr = Array.isArray(val) ? val : Object.values(val);
+  return arr.map(normalizeMenuItem).filter(Boolean).sort((a, b) => a.id - b.id);
+}
+
+function refreshAllItems() {
+  const base = Array.isArray(menuFoods) && menuFoods.length ? menuFoods : foods;
+  allItems = [...comboSets, ...base];
+}
+
+/* Локал нөөц цэсийг ачаална (интернэтгүй үед ч админы сүүлийн өөрчлөлт харагдана) */
+function loadMenuCache() {
+  try {
+    const raw = localStorage.getItem(MENU_CACHE_KEY);
+    if (!raw) return false;
+    const arr = menuSnapshotToArray(JSON.parse(raw));
+    if (arr.length) { menuFoods = arr; refreshAllItems(); return true; }
+  } catch (e) { /* алгасна */ }
+  return false;
+}
+
+/* Хоосон баазад үндсэн хоолнуудыг нэг удаа seed хийнэ */
+function seedMenuToCloud() {
+  if (!isCloudReady()) return;
+  try {
+    if (localStorage.getItem(MENU_SEED_KEY)) return;
+  } catch (e) {}
+  try {
+    const batch = {};
+    foods.forEach((f) => { batch[String(f.id)] = { ...f, available: true }; });
+    CLOUD.db.ref(MENU_PATH).set(batch).catch(() => {});
+    try { localStorage.setItem(MENU_SEED_KEY, "1"); } catch (e) {}
+  } catch (e) { console.warn("[Cloud] menu seed алдаа:", e); }
+}
+
+/* Цэсний бодит цагийн сонсогч — админ өөрчлөхөд сайт reload-гүй шинэчлэгдэнэ */
+function subscribeMenu() {
+  if (!isCloudReady()) return;
+  try {
+    CLOUD.db.ref(MENU_PATH).on('value', (snap) => {
+      try {
+        const arr = menuSnapshotToArray(snap.val());
+        if (arr.length === 0) {
+          seedMenuToCloud();
+          menuFoods = null;
+        } else {
+          menuFoods = arr;
+          try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(arr)); } catch (e) {}
+        }
+        refreshAllItems();
+        rerenderMenuViews();
+      } catch (e) { console.warn("[Cloud] menu parse алдаа:", e); }
+    });
+  } catch (e) { console.warn("[Cloud] menu listen алдаа:", e); }
+}
+
+/* Нээлттэй хуудсын цэсний харагдацыг дахин зурна */
+function rerenderMenuViews() {
+  try {
+    const page = (document.body && document.body.dataset && document.body.dataset.page) || "";
+    if (page === "menu") applyFilters();
+    if (page === "home") { renderPopular(); renderComboShowcase(); }
+  } catch (e) {}
+}
 
 /* ============================ 2. ТОГТМОЛ / ТОХИРГОО ============================ */
 const CONFIG = {
@@ -699,6 +794,17 @@ const PROMO_CODES = {
   FREEDELIVERY:  { type: "delivery", value: 0, label: "Үнэгүй хүргэлт" },
   HAZALT2026:    { type: "amount",  value: 5000, label: "5,000₮ хямдрал" }
 };
+
+/* Төлбөрийн дэлгэрэнгүй (QPay / Дансаар). ЖИНХЭНЭ дансаар солихоо мартуузай. */
+const PAYMENT_DETAILS = {
+  bankName: "Хаан банк",
+  accountName: "Түргэн Хазалт ХХК",
+  accountNo: "5000123456",
+  qpayMerchant: "ТҮРГЭН ХАЗАЛТ"
+};
+
+const PAYMENT_LABELS = { cash: "Бэлнээр", card: "Карт", transfer: "Дансаар", qpay: "QPay" };
+const PAYMENT_METHODS = ["cash", "card", "transfer", "qpay"];
 
 /* Нүүр хуудсанд харагдах "Хамгийн их борлуулалттай" хоолнууд */
 const POPULAR_IDS = [1, 8, 21, 36, 74, 89, 40, 30];
@@ -1114,8 +1220,9 @@ function cartCount() {
 function cartDetailed() {
   return cart.map((c) => {
     const f = getFood(c.id);
+    if (!f) return null; // админ устгасан хоолыг сагснаас чимээгүй алгасна
     return { ...f, qty: c.qty, lineTotal: f.price * c.qty };
-  });
+  }).filter(Boolean);
 }
 
 function cartSubtotal() {
@@ -1146,6 +1253,10 @@ function cartTotals() {
 function addToCart(foodId, qty = 1, silent = false) {
   const food = getFood(foodId);
   if (!food) return;
+  if (food.available === false) {
+    showToast(`"${food.name}" одоогоор дууссан байна.`, "warning", "Дууссан");
+    return;
+  }
   const existing = cart.find((i) => i.id === food.id);
   if (existing) existing.qty += qty;
   else cart.push({ id: food.id, qty });
@@ -1289,10 +1400,11 @@ function ensureCartUI() {
         </div>
         <div>
           <label class="block text-sm font-bold text-gray-700 mb-1">Төлбөрийн хэлбэр</label>
-          <div class="grid grid-cols-3 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <label class="pay-option"><input type="radio" name="payment" value="cash" class="hidden" checked><i class="fa-solid fa-money-bill-wave"></i><span>Бэлнээр</span></label>
             <label class="pay-option"><input type="radio" name="payment" value="card" class="hidden"><i class="fa-solid fa-credit-card"></i><span>Карт</span></label>
             <label class="pay-option"><input type="radio" name="payment" value="transfer" class="hidden"><i class="fa-solid fa-building-columns"></i><span>Дансаар</span></label>
+            <label class="pay-option"><input type="radio" name="payment" value="qpay" class="hidden"><i class="fa-solid fa-qrcode"></i><span>QPay</span></label>
           </div>
         </div>
         <div>
@@ -1508,6 +1620,193 @@ function closeSuccess() {
   document.body.classList.remove("overflow-hidden");
 }
 
+/* ============================ 8.5 ТӨЛБӨРИЙН ЦОНХ (QPay / ДАНСААР) ============================
+   Захиалга createOrder-оор Firebase-д аль хэдийн хадгалагдсан (paymentStatus: unpaid).
+   Хэрэглэгч зааврын дагуу төлж, "Төлбөр төлсөн" дарахад markOrderPaid Firebase руу синк хийнэ. */
+
+function copyPayText(text, label) {
+  const done = () => showToast(`"${label || text}" хуулагдлаа.`, "success", "Хуулагдлаа");
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(String(text)).then(done, () => fallbackCopyPayText(text, done));
+      return;
+    }
+  } catch (e) { /* fallback */ }
+  fallbackCopyPayText(text, done);
+}
+
+function fallbackCopyPayText(text, done) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = String(text);
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    done();
+  } catch (e) {
+    showToast("Хуулах боломжгүй байна. Гараар бичнэ үү.", "error", "Алдаа");
+  }
+}
+
+/* Mock QPay QR (SVG, офлайнаар ажиллана): захиалгын кодоос детерминистик хэвшил үүсгэнэ */
+function qpayQRsvg(seed) {
+  const s = String(seed || "QPay");
+  let h1 = 0x811c9dc5, h2 = 0x01000193;
+  const bytes = [];
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 16777619) >>> 0;
+    h2 = Math.imul(h2 + c, 31) >>> 0;
+    bytes.push(c & 255);
+  }
+  const N = 25;
+  let cells = "";
+  const inFinder = (x, y) => (x < 8 && y < 8) || (x >= N - 8 && y < 8) || (x < 8 && y >= N - 8);
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      if (inFinder(x, y)) continue;
+      const v = (h1 >> ((x * 7 + y * 13) % 24)) ^ (h2 >> ((x * 3 + y * 11) % 24)) ^ bytes[(x + y) % bytes.length];
+      if ((v & 1) === 0) cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+    }
+  }
+  const finder = (fx, fy) => `
+    <rect x="${fx}" y="${fy}" width="7" height="7" fill="#1e1b4b"/>
+    <rect x="${fx + 1}" y="${fy + 1}" width="5" height="5" fill="#fff"/>
+    <rect x="${fx + 2}" y="${fy + 2}" width="3" height="3" fill="#dc2626"/>`;
+  return `<svg viewBox="-1 -1 ${N + 2} ${N + 2}" class="qpay-qr" role="img" aria-label="QPay QR код">
+    <rect x="-1" y="-1" width="${N + 2}" height="${N + 2}" fill="#fff"/>
+    <g fill="#111827">${cells}</g>${finder(0, 0)}${finder(N - 7, 0)}${finder(0, N - 7)}
+  </svg>`;
+}
+
+/* Гүйлгээний утга: захиалгын код, нөөцөөр утасны дугаар */
+function paymentNoteFor(order) {
+  if (order && order.code) return String(order.code);
+  if (order && order.customer && order.customer.phone) return String(order.customer.phone);
+  return "";
+}
+
+function openPaymentModal(orderId) {
+  const order = getOrders().find((o) => o && o.id === orderId);
+  if (!order) { showToast("Захиалга олдсонгүй.", "error", "Алдаа"); return; }
+  let modal = document.getElementById("payment-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "payment-modal";
+    modal.className = "fixed inset-0 z-[75] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4";
+    modal.addEventListener("click", (e) => { if (e.target === modal) closePaymentModal(); });
+    document.body.appendChild(modal);
+  }
+  const note = paymentNoteFor(order);
+  const methodLabel = PAYMENT_LABELS[order.payment] || "Онлайн";
+  const isQpay = order.payment === "qpay";
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl relative max-h-[92vh] overflow-y-auto cart-scroll modal-panel" onclick="event.stopPropagation()">
+      <div class="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-3xl">
+        <h3 class="text-xl font-black text-gray-900 flex items-center gap-2">
+          <i class="fa-solid ${isQpay ? "fa-qrcode" : "fa-building-columns"} text-red-600"></i> ${escapeHtml(methodLabel)} төлбөр
+        </h3>
+        <button onclick="closePaymentModal()" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-red-600 hover:text-white text-gray-500 transition flex items-center justify-center" aria-label="Хаах">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Төлөх дүн</p>
+            <p class="text-2xl font-black text-red-600">${money(order.total)}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Захиалга</p>
+            <p class="font-black text-gray-900">#${escapeHtml(order.code)}</p>
+          </div>
+        </div>
+
+        ${isQpay ? `
+        <div class="text-center">
+          <p class="text-sm font-black text-gray-800 mb-2"><i class="fa-solid fa-qrcode text-red-600 mr-1"></i> QPay-ээр уншуулах</p>
+          <div class="qr-wrap mx-auto">${qpayQRsvg(order.code + "|" + order.total)}</div>
+          <p class="text-xs text-gray-500 mt-2">${escapeHtml(PAYMENT_DETAILS.qpayMerchant)} • ${money(order.total)}</p>
+        </div>` : `
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-2 text-sm">
+          <p class="text-sm font-black text-gray-800 mb-1"><i class="fa-solid fa-building-columns text-red-600 mr-1"></i> Дансаар шилжүүлэх</p>
+          <div class="flex justify-between"><span class="text-gray-500">Банк:</span><span class="font-bold text-gray-900">${escapeHtml(PAYMENT_DETAILS.bankName)}</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Хүлээн авагч:</span><span class="font-bold text-gray-900">${escapeHtml(PAYMENT_DETAILS.accountName)}</span></div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-gray-500">Данс:</span>
+            <span class="font-black text-gray-900 tracking-wider">${escapeHtml(PAYMENT_DETAILS.accountNo)}</span>
+            <button onclick="copyPayText('${escapeHtml(PAYMENT_DETAILS.accountNo)}', 'Дансны дугаар')" class="copy-btn"><i class="fa-solid fa-copy mr-1"></i>Хуулах</button>
+          </div>
+        </div>`}
+
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <p class="text-xs font-black uppercase tracking-wider text-amber-700 mb-2"><i class="fa-solid fa-pen-to-square mr-1"></i> Гүйлгээний утга</p>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-lg font-black text-gray-900 tracking-widest">${escapeHtml(note)}</span>
+            <button onclick="copyPayText('${escapeHtml(note)}', 'Гүйлгээний утга')" class="copy-btn"><i class="fa-solid fa-copy mr-1"></i>Хуулах</button>
+          </div>
+          <p class="text-xs font-bold text-red-600 mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Гүйлгээний утга дээр дээрх кодыг заавал бичнэ үү!</p>
+        </div>
+
+        <button onclick="confirmPayment('${order.id}')" class="btn-shine w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-green-200">
+          <i class="fa-solid fa-circle-check mr-1"></i> Төлбөр төлсөн / Захиалах
+        </button>
+        <p class="text-center text-xs text-gray-400">Төлбөр баталгаажсаны дараа гал тогоонд захиалга шууд очно.</p>
+      </div>
+    </div>`;
+  modal.classList.remove("hidden");
+  document.body.classList.add("overflow-hidden");
+}
+
+function closePaymentModal() {
+  const modal = document.getElementById("payment-modal");
+  if (!modal || modal.classList.contains("hidden")) return;
+  modal.classList.add("hidden");
+  document.body.classList.remove("overflow-hidden");
+  showToast("Захиалга хадгалагдсан. Төлбөр хүлээгдэж байна.", "info", "Төлбөр төлөгдөөгүй");
+}
+
+/* "Төлбөр төлсөн" → төлбөрийн төрөл/дүн/захиалгыг Firebase руу найдвартай синк хийнэ */
+function confirmPayment(orderId) {
+  const res = markOrderPaid(orderId);
+  if (!res.ok) { showToast(res.error || "Захиалга олдсонгүй.", "error", "Алдаа"); return; }
+  const modal = document.getElementById("payment-modal");
+  if (modal) modal.classList.add("hidden");
+  showOrderSuccess(res.order);
+}
+
+function markOrderPaid(orderId) {
+  const orders = getOrders();
+  const idx = orders.findIndex((o) => o && o.id === orderId);
+  if (idx === -1) return { ok: false, error: "Захиалга олдсонгүй." };
+  const now = new Date().toISOString();
+  orders[idx] = { ...orders[idx], paymentStatus: "paid", paidAt: now, updatedAt: now };
+  saveOrders(orders);
+  // >>> ONLINE SYNC: төлбөрийн төрөл + дүн + захиалга Firebase-д бичигдэнэ
+  cloudUpsertOrder(orders[idx]);
+  try {
+    if (CLOUD.ordersCache !== null) {
+      const ci = CLOUD.ordersCache.findIndex((o) => o && o.id === orderId);
+      if (ci > -1) CLOUD.ordersCache[ci] = { ...orders[idx] };
+    }
+  } catch (e) {}
+  return { ok: true, order: orders[idx] };
+}
+
+function showOrderSuccess(order) {
+  const codeEl = document.getElementById("success-code");
+  const totalEl = document.getElementById("success-total");
+  if (codeEl) codeEl.textContent = order.code;
+  if (totalEl) totalEl.textContent = `Нийт төлөх: ${money(order.total)} • ${ORDER_STATUS[order.status].label}`;
+  const success = document.getElementById("success-modal");
+  if (success) success.classList.remove("hidden");
+  document.body.classList.add("overflow-hidden");
+  showToast(`Захиалга #${order.code} амжилттай баталгаажлаа!`, "success", "Захиалга илгээгдлээ");
+}
+
 function setFieldError(inputId, message) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -1568,7 +1867,7 @@ function getOrdersByPhone(phone) {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
-function createOrder({ name, phone, address, note, payment }) {
+function createOrder({ name, phone, address, note, payment, paymentStatus }) {
   const user = getCurrentUser();
   const items = cartDetailed().map((i) => ({
     id: i.id,
@@ -1580,6 +1879,8 @@ function createOrder({ name, phone, address, note, payment }) {
     includes: i.isCombo ? comboIncludesList(i) : undefined
   }));
   const t = cartTotals();
+  const now = new Date().toISOString();
+  const paid = (paymentStatus || "paid") === "paid";
   const order = {
     id: genId("ord"),
     code: orderCode(),
@@ -1593,10 +1894,12 @@ function createOrder({ name, phone, address, note, payment }) {
     deliveryFee: t.deliveryFee,
     total: t.total,
     payment: payment || "cash",
+    paymentStatus: paid ? "paid" : "unpaid",
+    paidAt: paid ? now : null,
     status: "pending",
-    statusHistory: [{ status: "pending", at: new Date().toISOString() }],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    statusHistory: [{ status: "pending", at: now }],
+    createdAt: now,
+    updatedAt: now
   };
   const orders = getOrders();
   orders.unshift(order);
@@ -1651,22 +1954,22 @@ function handleOrderSubmit(e) {
     return;
   }
 
-  const order = createOrder({ name, phone, address, note, payment });
+  const onlinePay = (payment === "transfer" || payment === "qpay");
+  const order = createOrder({ name, phone, address, note, payment, paymentStatus: onlinePay ? "unpaid" : "paid" });
   const user = getCurrentUser();
   if (user) updateCurrentUser({ address });
 
+  // QPay / Дансаар бол төлбөрийн зааварчилгааны цонх нээнэ (захиалга аль хэдийн Firebase-д хадгалагдсан)
+  if (onlinePay) {
+    clearCart(true);
+    closeCheckout();
+    openPaymentModal(order.id);
+    return;
+  }
+
   clearCart(true);
   closeCheckout();
-
-  const codeEl = document.getElementById("success-code");
-  const totalEl = document.getElementById("success-total");
-  if (codeEl) codeEl.textContent = order.code;
-  if (totalEl) totalEl.textContent = `Нийт төлөх: ${money(order.total)} • ${ORDER_STATUS[order.status].label}`;
-  const success = document.getElementById("success-modal");
-  if (success) success.classList.remove("hidden");
-  document.body.classList.add("overflow-hidden");
-
-  showToast(`Захиалга #${order.code} амжилттай баталгаажлаа!`, "success", "Захиалга илгээгдлээ");
+  showOrderSuccess(order);
 }
 
 /* ============================ 10. ХАЙЛТ & ФИЛЬТР ============================ */
@@ -1788,9 +2091,14 @@ function comboCardHTML(combo, index = 0) {
 
 function foodCardHTML(food, index = 0) {
   if (food.isCombo) return comboCardHTML(food, index);
+  const soldOut = food.available === false;
 
   const topIdx = POPULAR_IDS.indexOf(food.id);
-  const badge = topIdx > -1
+  const badge = soldOut
+    ? `<span class="absolute top-3 left-3 bg-gray-800 text-white text-[11px] font-black px-3 py-1 rounded-full shadow-md badge-pop">
+         <i class="fa-solid fa-circle-xmark mr-1"></i> Дууссан
+       </span>`
+    : topIdx > -1
     ? `<span class="absolute top-3 left-3 bg-amber-400 text-red-950 text-[11px] font-black px-3 py-1 rounded-full shadow-md badge-pop">
          <i class="fa-solid fa-star mr-1"></i> Top #${topIdx + 1}
        </span>`
@@ -1799,7 +2107,7 @@ function foodCardHTML(food, index = 0) {
        </span>`;
 
   return `
-    <article class="food-card group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col justify-between" style="--delay:${Math.min(index * 45, 600)}ms">
+    <article class="food-card ${soldOut ? "sold-out" : ""} group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col justify-between" style="--delay:${Math.min(index * 45, 600)}ms">
       <div>
         <div class="relative overflow-hidden">
           <img src="${food.img}" alt="${escapeHtml(food.name)}" loading="lazy"
@@ -1819,9 +2127,13 @@ function foodCardHTML(food, index = 0) {
       </div>
       <div class="p-5 pt-0 flex items-center justify-between gap-2">
         <span class="text-xl font-extrabold text-red-600">${money(food.price)}</span>
-        <button onclick="addToCart(${food.id})" class="add-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 flex-shrink-0">
-          <i class="fa-solid fa-cart-plus text-xs"></i> Сагслах
-        </button>
+        ${soldOut
+          ? `<button disabled class="add-btn bg-gray-100 text-gray-400 font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 flex-shrink-0 cursor-not-allowed">
+               <i class="fa-solid fa-circle-xmark text-xs"></i> Дууссан
+             </button>`
+          : `<button onclick="addToCart(${food.id})" class="add-btn bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 flex-shrink-0">
+               <i class="fa-solid fa-cart-plus text-xs"></i> Сагслах
+             </button>`}
       </div>
     </article>`;
 }
@@ -2086,8 +2398,8 @@ function openQuickView(foodId) {
             <button onclick="quickQty(1)" class="w-9 h-9 rounded-full bg-gray-100 font-bold hover:bg-gray-200 transition">+</button>
           </div>
         </div>
-        <button onclick="addQuickToCart(${food.id})" class="btn-shine w-full mt-5 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-red-200">
-          <i class="fa-solid fa-cart-plus mr-1"></i> ${food.isCombo ? "Багц сагслах" : "Сагсанд нэмэх"}
+        <button onclick="addQuickToCart(${food.id})" ${food.available === false ? "disabled" : ""} class="btn-shine w-full mt-5 ${food.available === false ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 text-white"} font-bold py-3.5 rounded-xl transition shadow-lg ${food.available === false ? "" : "shadow-red-200"}">
+          <i class="fa-solid ${food.available === false ? "fa-circle-xmark" : "fa-cart-plus"} mr-1"></i> ${food.available === false ? "Дууссан байна" : (food.isCombo ? "Багц сагслах" : "Сагсанд нэмэх")}
         </button>
       </div>
     </div>`;
@@ -2608,6 +2920,7 @@ function requireAdmin() {
 function initCommon() {
   if (!requireAdmin()) return;
   seedAdmin();
+  try { loadMenuCache(); } catch (e) {} // админы сүүлийн цэсний өөрчлөлт эхлээд ачааллана
   ensureCartUI();
   ensureToastHost();
   renderHeader();
@@ -2657,6 +2970,8 @@ function initCommon() {
     if (cartModal && !cartModal.classList.contains("hidden")) { toggleCart(); return; }
     const co = document.getElementById("checkout-modal");
     if (co && !co.classList.contains("hidden")) { closeCheckout(); return; }
+    const pm = document.getElementById("payment-modal");
+    if (pm && !pm.classList.contains("hidden")) { closePaymentModal(); return; }
     const qv = document.getElementById("quick-view-modal");
     if (qv && !qv.classList.contains("hidden")) { closeQuickView(); return; }
     const su = document.getElementById("success-modal");
@@ -2732,6 +3047,10 @@ window.TH = {
   getOrders, saveOrders, saveOrder, deleteOrder, updateOrderStatus, getCurrentUser, isAdmin, isLoggedIn,
   getMyOrders, addToCart, toggleCart, showToast, cartCount, renderHeader, logoutUser,
   // >>> ONLINE API (Firebase Realtime Database):
-  FIREBASE_CONFIG, CLOUD, ORDERS_PATH, USERS_PATH, isCloudConfigured, isCloudReady, initCloud,
-  loginUserAsync, registerUserAsync, cloudUpsertOrder, cloudRemoveOrder, cloudUpsertUser
+  FIREBASE_CONFIG, CLOUD, ORDERS_PATH, USERS_PATH, MENU_PATH, isCloudConfigured, isCloudReady, initCloud,
+  loginUserAsync, registerUserAsync, cloudUpsertOrder, cloudRemoveOrder, cloudUpsertUser,
+  // >>> ТӨЛБӨР + ЦЭСНИЙ УДИРДЛАГА:
+  PAYMENT_DETAILS, PAYMENT_LABELS, PAYMENT_METHODS,
+  copyPayText, qpayQRsvg, paymentNoteFor, openPaymentModal, closePaymentModal, confirmPayment, markOrderPaid, showOrderSuccess,
+  menuSnapshotToArray, normalizeMenuItem, refreshAllItems, loadMenuCache, seedMenuToCloud, subscribeMenu, rerenderMenuViews
 };

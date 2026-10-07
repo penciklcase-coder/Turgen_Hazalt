@@ -459,3 +459,31 @@ body::-webkit-scrollbar-thumb { background: linear-gradient(var(--brand-red), va
     transition-duration: .001ms !important;
   }
 }
+
+/* ============================ ЦЭСНИЙ УДИРДЛАГА (MENU MANAGEMENT) ============================ */
+.menu-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .9rem;
+  margin-bottom: .5rem;
+}
+.menu-form-full { grid-column: 1 / -1; }
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  background: #fff;
+  border: 1px solid #e9eef5;
+  border-radius: 1rem;
+  padding: .7rem .9rem;
+  transition: box-shadow .25s ease, border-color .25s ease;
+}
+.menu-row:hover { border-color: rgba(220, 38, 38, .25); box-shadow: 0 14px 28px -22px rgba(15, 23, 42, .5); }
+.menu-row-out { background: #f8fafc; }
+.menu-row-out img { filter: grayscale(1); opacity: .6; }
+
+@media (max-width: 640px) {
+  .menu-form { grid-template-columns: 1fr; }
+  .menu-row { align-items: flex-start; }
+  .menu-row .flex-1 { min-width: 0; }
+}

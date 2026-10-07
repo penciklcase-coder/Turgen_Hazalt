@@ -738,3 +738,47 @@ a:active, button:active { transform: scale(.985); }
   min-height: 46px;
 }
 @media (min-width: 769px) { #mobile-cart-bar { display: none !important; } }
+
+/* ============================ ТӨЛБӨРИЙН ЦОНХ (QPay / ДАНСААР) ============================ */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  background: #0f172a;
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 800;
+  padding: .55rem .9rem;
+  border-radius: .75rem;
+  min-height: 40px;
+  flex-shrink: 0;
+  transition: background-color .2s ease, transform .2s ease;
+}
+.copy-btn:hover { background: var(--brand-red); }
+.copy-btn:active { transform: scale(.95); }
+.qr-wrap {
+  width: 210px;
+  max-width: 70vw;
+  margin: 0 auto;
+  padding: .8rem;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 1.25rem;
+  box-shadow: 0 14px 30px -18px rgba(15, 23, 42, .5);
+}
+.qpay-qr { width: 100%; height: auto; display: block; border-radius: .5rem; }
+
+/* Дууссан хоолны карт (menu.html) */
+.food-card.sold-out { opacity: .92; }
+.food-card.sold-out .food-img { filter: grayscale(1); opacity: .55; }
+.food-card.sold-out:hover { transform: none; }
+
+@media (max-width: 768px) {
+  #payment-modal { align-items: flex-end !important; padding: 0 !important; }
+  #payment-modal > div {
+    border-radius: 1.5rem 1.5rem 0 0 !important;
+    max-height: 94dvh !important;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .qr-wrap { width: 180px; }
+}

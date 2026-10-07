@@ -68,6 +68,9 @@
           <i class="fa-solid fa-receipt"></i> Захиалга хянах
           <span id="nav-pending-badge" class="nav-badge">0</span>
         </a>
+        <a href="index.html#menu-mgmt" class="admin-nav-link">
+          <i class="fa-solid fa-utensils"></i> Цэсний удирдлага
+        </a>
         <p class="nav-group-title">Тохиргоо</p>
         <a href="../index.html" class="admin-nav-link">
           <i class="fa-solid fa-globe"></i> Хэрэглэгчийн сайт
@@ -150,6 +153,59 @@
             </div>
           </div>
         </div>
+
+        <!-- ============ ЦЭСНИЙ УДИРДЛАГА (MENU MANAGEMENT) ============ -->
+        <section id="menu-mgmt" class="panel mt-6">
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+            <h2 class="panel-title mb-0"><i class="fa-solid fa-utensils text-red-600"></i> Цэсний удирдлага</h2>
+            <p id="menu-count" class="text-sm font-semibold text-gray-500"></p>
+          </div>
+
+          <form id="menu-form" class="menu-form" novalidate>
+            <input id="mm-id" type="hidden" value="">
+            <div>
+              <label class="block text-xs font-black uppercase tracking-wider text-gray-500 mb-1.5">Хоолны нэр *</label>
+              <input id="mm-name" type="text" required placeholder="Жишээ: Чизбургер" class="admin-input">
+            </div>
+            <div>
+              <label class="block text-xs font-black uppercase tracking-wider text-gray-500 mb-1.5">Үнэ (₮) *</label>
+              <input id="mm-price" type="number" min="1" step="100" required placeholder="12500" class="admin-input">
+            </div>
+            <div>
+              <label class="block text-xs font-black uppercase tracking-wider text-gray-500 mb-1.5">Ангилал</label>
+              <select id="mm-category" class="admin-input font-semibold">
+                <option value="burger">Бургер &amp; Хачир</option>
+                <option value="chicken">Тахианы мах</option>
+                <option value="pizza">Пицца &amp; Сэндвич</option>
+                <option value="asian">Ази &amp; Түргэн хоол</option>
+                <option value="dessert">Амттан</option>
+                <option value="drink">Ундаа &amp; Кофе</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-black uppercase tracking-wider text-gray-500 mb-1.5">Зургийн линк (URL)</label>
+              <input id="mm-img" type="url" placeholder="https://..." oninput="previewMenuImg()" class="admin-input">
+            </div>
+            <div class="menu-form-full">
+              <label class="block text-xs font-black uppercase tracking-wider text-gray-500 mb-1.5">Тайлбар</label>
+              <textarea id="mm-desc" rows="2" placeholder="Хоолны тайлбар..." class="admin-input"></textarea>
+            </div>
+            <div class="menu-form-full flex items-center gap-3 flex-wrap">
+              <img id="mm-img-preview" src="" alt="" class="hidden w-16 h-16 rounded-xl object-cover border border-gray-200">
+              <button id="mm-submit" type="submit" class="admin-btn admin-btn-primary">
+                <i class="fa-solid fa-plus"></i> Хоол нэмэх
+              </button>
+              <button id="mm-cancel" type="button" onclick="resetMenuForm()" class="admin-btn admin-btn-light hidden">
+                <i class="fa-solid fa-xmark"></i> Болих
+              </button>
+            </div>
+          </form>
+
+          <div class="mt-5">
+            <input id="menu-search" type="text" autocomplete="off" placeholder="Цэснээс хайх (нэр, тайлбар, үнэ)..." class="admin-input mb-4">
+            <div id="menu-list" class="space-y-2.5 max-h-[480px] overflow-y-auto admin-scroll pr-1"></div>
+          </div>
+        </section>
 
       </main>
     </div>
